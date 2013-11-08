@@ -1,20 +1,19 @@
 package net.canarymod.database;
 
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import net.canarymod.Canary;
 import net.canarymod.CanaryClassLoader;
 import net.canarymod.database.exceptions.DatabaseException;
 import net.visualillusionsent.utils.PropertiesFile;
 import net.visualillusionsent.utils.UtilityException;
 
+import java.io.File;
+import java.net.MalformedURLException;
+
 /**
  * Checks a database folder in CanaryMods root folder for
  * external Database Implementations and loads them
- * 
- * @author chris
+ *
+ * @author Chris (damagefilter)
  */
 public class DatabaseLoader {
     /**
@@ -32,39 +31,38 @@ public class DatabaseLoader {
             if (!file.getName().endsWith(".jar")) {
                 continue;
             }
-            CanaryClassLoader loader = null;
             try {
-                loader = new CanaryClassLoader(file.toURI().toURL(), Thread.currentThread().getContextClassLoader());
-            } catch (MalformedURLException ex) {
-                Canary.logStacktrace("Exception while loading database jar", ex);
-                return;
-            }
-            PropertiesFile inf = new PropertiesFile(file.getAbsolutePath(), "Canary.inf");
-            try {
+                PropertiesFile inf = new PropertiesFile(file.getAbsolutePath(), "Canary.inf");
+                CanaryClassLoader ploader = new CanaryClassLoader(file.toURI().toURL(), DatabaseLoader.class.getClassLoader());
                 String mainclass = inf.getString("main-class");
                 String dbName = inf.getString("database-name");
-                Class<?> dbClass = loader.loadClass(mainclass);
-                Method m = dbClass.getMethod("getInstance", new Class[0]);
-                Database db = (Database) m.invoke(dbClass, new Object[0]);
+                Class<?> dbClass = ploader.loadClass(mainclass);
+
+                Database db = (Database) dbClass.newInstance();
                 if (db != null) {
                     Database.Type.registerDatabase(dbName, db);
                 }
-            } catch (UtilityException e) {
+            }
+            catch (UtilityException e) {
                 Canary.logStacktrace("Could not find databases mainclass", e);
                 return;
-            } catch (ClassNotFoundException e) {
+            }
+            catch (ClassNotFoundException e) {
                 Canary.logStacktrace("Could not find databases mainclass", e);
-            } catch (IllegalAccessException e) {
+            }
+            catch (IllegalAccessException e) {
                 Canary.logStacktrace("Could not create database", e);
-            } catch (DatabaseException e) {
+            }
+            catch (DatabaseException e) {
                 Canary.logStacktrace("Could not add database", e);
-            } catch (SecurityException e) {
+            }
+            catch (SecurityException e) {
                 Canary.logStacktrace(e.getMessage(), e);
-            } catch (NoSuchMethodException e) {
-                Canary.logStacktrace("Database does not contain a static getInstance() method!", e);
-            } catch (IllegalArgumentException e) {
+            }
+            catch (InstantiationException e) {
                 Canary.logStacktrace(e.getMessage(), e);
-            } catch (InvocationTargetException e) {
+            }
+            catch (MalformedURLException e) {
                 Canary.logStacktrace(e.getMessage(), e);
             }
         }

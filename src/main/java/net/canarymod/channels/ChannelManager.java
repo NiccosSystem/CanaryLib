@@ -3,6 +3,7 @@ package net.canarymod.channels;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
 import net.canarymod.Canary;
 import net.canarymod.api.NetServerHandler;
 import net.canarymod.api.entity.living.humanoid.Player;
@@ -21,7 +22,7 @@ import net.canarymod.plugin.Plugin;
  * - To register and unregister the client, send packets with the names 'REGISTER'
  * and 'UNREGISTER' respectively, with a message of the actual channel name to
  * register/unregister.<br>
- * 
+ *
  * @author Somners
  */
 public abstract class ChannelManager implements ChannelManagerInterface {
@@ -29,9 +30,7 @@ public abstract class ChannelManager implements ChannelManagerInterface {
     private HashMap<String, List<RegisteredChannelListener>> listeners = new HashMap<String, List<RegisteredChannelListener>>();
     protected HashMap<String, List<NetServerHandler>> clients = new HashMap<String, List<NetServerHandler>>();
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void registerListener(Plugin plugin, String channel, ChannelListener listener) {
         try {
@@ -49,48 +48,44 @@ public abstract class ChannelManager implements ChannelManagerInterface {
             }
             if (listeners.containsKey(channel)) {
                 listeners.get(channel).add(new RegisteredChannelListener(plugin, listener));
-            } else {
+            }
+            else {
                 ArrayList<RegisteredChannelListener> forMap = new ArrayList<RegisteredChannelListener>();
                 forMap.add(new RegisteredChannelListener(plugin, listener));
                 listeners.put(channel, forMap);
             }
-        } catch (CustomPayloadChannelException ex) {
+        }
+        catch (CustomPayloadChannelException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean unregisterListeners(Plugin plugin) {
         boolean toRet = false;
         for (List<RegisteredChannelListener> list : listeners.values()) {
-            for (RegisteredChannelListener listener : list) {
-                if (listener.getPlugin().equals(plugin)) {
-                    list.remove(listener);
-                    toRet = true;
+            synchronized (list) {
+                for (RegisteredChannelListener listener : list) {
+                    if (listener.getPlugin().equals(plugin)) {
+                        list.remove(listener);
+                        toRet = true;
+                    }
                 }
             }
         }
         return toRet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public abstract boolean sendCustomPayloadToAllPlayers(String channel, byte[] bytestream);
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public abstract boolean sendCustomPayloadToPlayer(String channel, byte[] bytestream, Player player);
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void sendCustomPayloadToListeners(String channel, byte[] byteStream, Player player) {
         if (listeners.containsKey(channel)) {
@@ -100,9 +95,7 @@ public abstract class ChannelManager implements ChannelManagerInterface {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void registerClient(String channel, NetServerHandler handler) {
         try {
@@ -111,43 +104,38 @@ public abstract class ChannelManager implements ChannelManagerInterface {
             }
             if (clients.containsKey(channel)) {
                 clients.get(channel).add(handler);
-            } else {
+            }
+            else {
                 ArrayList<NetServerHandler> forMap = new ArrayList<NetServerHandler>();
                 forMap.add(handler);
                 clients.put(channel, forMap);
             }
-        } catch (CustomPayloadChannelException ex) {
+        }
+        catch (CustomPayloadChannelException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean unregisterClient(String channel, NetServerHandler handler) {
-        boolean toRet = false;
         if (clients.containsKey(channel)) {
-            for (NetServerHandler h : clients.get(channel)) {
-                if (h.equals(handler)) {
-                    clients.get(channel).remove(h);
-                    toRet = true;
-                    Canary.logInfo(String.format("Client Custom Payload channel '%s' has been unregistered "
-                            + "for client '%s'", channel, handler.getUser().getName()));
+            synchronized (clients.get(channel)) {
+                if (clients.get(channel).remove(handler)) {
+                    Canary.logInfo(String.format("Client Custom Payload channel '%s' has been unregistered for client '%s'", channel, handler.getUser().getName()));
+                    return true;
                 }
             }
         }
-        return toRet;
+        return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean unregisterClientAll(NetServerHandler handler) {
-        boolean toRet = false;
+        boolean toRet = true;
         for (String channel : clients.keySet()) {
-            this.unregisterClient(channel, handler);
+            toRet &= unregisterClient(channel, handler);
         }
         return toRet;
     }

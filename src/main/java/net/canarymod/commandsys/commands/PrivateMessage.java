@@ -5,9 +5,15 @@ import net.canarymod.Translator;
 import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.chat.Colors;
 import net.canarymod.chat.MessageReceiver;
+import net.canarymod.commandsys.NativeCommand;
 import net.visualillusionsent.utils.StringUtils;
 
-public class PrivateMessage {
+/**
+ * Command to send a private message to another player  
+ *
+ * @author Chris (damagefilter)
+ */
+public class PrivateMessage implements NativeCommand {
 
     public void execute(MessageReceiver caller, String[] parameters) {
         Player target = Canary.getServer().matchPlayer(parameters[1]);
@@ -18,7 +24,8 @@ public class PrivateMessage {
         if (target != null) {
             caller.message(Colors.LIGHT_GRAY + "-> " + target.getPrefix() + target.getName() + Colors.WHITE + ": " + StringUtils.joinString(parameters, " ", 2));
             target.message(Colors.LIGHT_GRAY + "(MSG) " + prefix + caller.getName() + Colors.WHITE + ": " + StringUtils.joinString(parameters, " ", 2));
-        } else {
+        }
+        else {
             caller.notice(Translator.translateAndFormat("unknown player", parameters[1]));
         }
     }

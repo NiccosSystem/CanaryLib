@@ -5,7 +5,10 @@ import net.canarymod.api.world.position.Location;
 import net.canarymod.hook.CancelableHook;
 
 /**
- * @author Somners
+ * Dimension switch hook. Contains information about an entity changeing
+ * dimentions
+ *
+ * @author Somners 
  */
 public class DimensionSwitchHook extends CancelableHook {
 

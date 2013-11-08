@@ -5,8 +5,8 @@ import net.canarymod.hook.CancelableHook;
 
 /**
  * Block update hook. Contains information about a block updating.
- * 
- * @author Jason Jones
+ *
+ * @author Jason (darkdiplomat)
  */
 public final class LeafDecayHook extends CancelableHook {
 
@@ -18,8 +18,8 @@ public final class LeafDecayHook extends CancelableHook {
 
     /**
      * Get the leaf block that is about to decay
-     * 
-     * @return
+     *
+     * @return the {@link Block} of leaves
      */
     public Block getBlock() {
         return block;

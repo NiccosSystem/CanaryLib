@@ -1,8 +1,10 @@
 package net.canarymod.help;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.TreeMap;
+
 import net.canarymod.Translator;
 import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.chat.Colors;
@@ -27,9 +29,10 @@ public class HelpManager {
      * Registers a command. This is called from CommandManager upon registering a command.
      * Typically you don't need to call this yourself, however if you need to add custom help
      * content, then this is the right place for it.
-     * 
+     *
      * @param owner
      * @param command
+     *
      * @return
      */
     public boolean registerCommand(CommandOwner owner, CanaryCommand command) {
@@ -37,24 +40,28 @@ public class HelpManager {
         if (getNode(basename) != null) {
             return false;
         }
-        nodes.put(basename, new HelpNode(owner, command));
-        return true;
+        synchronized (nodes) {
+            nodes.put(basename, new HelpNode(owner, command));
+            return true;
+        }
     }
 
     public boolean registerCommand(CommandOwner owner, CanaryCommand command, String lookup) {
         if (getNode(lookup) != null) {
             return false;
         }
-
-        nodes.put(lookup, new HelpNode(owner, command));
-        return true;
+        synchronized (nodes) {
+            nodes.put(lookup, new HelpNode(owner, command));
+            return true;
+        }
     }
 
     /**
      * Unregister a command
-     * 
+     *
      * @param plugin
      * @param command
+     *
      * @return true on success, false on failure
      */
     public boolean unregisterCommand(CommandOwner plugin, String command) {
@@ -72,23 +79,26 @@ public class HelpManager {
 
     /**
      * Unregisters all commands assigned to the given plugin
-     * 
+     *
      * @param owner
      */
     public void unregisterCommands(CommandOwner owner) {
-        Iterator<String> itr = nodes.keySet().iterator();
-        while (itr.hasNext()) {
-            HelpNode node = getNode(itr.next());
-            if (node.getOwner() == owner) {
-                itr.remove();
+        synchronized (nodes) {
+            Iterator<HelpNode> itr = nodes.values().iterator();
+            while (itr.hasNext()) {
+                HelpNode node = itr.next();
+                if (node.getOwner() == owner) {
+                    itr.remove();
+                }
             }
         }
     }
 
     /**
      * Check if this command name already is registered
-     * 
+     *
      * @param command
+     *
      * @return
      */
     public boolean hasHelp(String command) {
@@ -97,7 +107,7 @@ public class HelpManager {
 
     /**
      * Get the maximum number of entries in one page
-     * 
+     *
      * @return
      */
     public int getEntriesPerPage() {
@@ -106,9 +116,10 @@ public class HelpManager {
 
     /**
      * Returns a formatted list (each entry is one line) of commands
-     * 
+     *
      * @param player
      * @param page
+     *
      * @return
      */
     public ArrayList<String> getHelp(Player player, int page) {
@@ -118,9 +129,11 @@ public class HelpManager {
             page = 1;
         }
         // Get all nodes
-        for (HelpNode node : this.nodes.values()) {
-            if (node.canUse(player)) {
-                addHelpContext(player, node, lines, false, true);
+        synchronized (nodes) {
+            for (HelpNode node : this.nodes.values()) {
+                if (node.canUse(player)) {
+                    addHelpContext(player, node, lines, false, true);
+                }
             }
         }
         int pageNum = (int) Math.ceil((double) lines.size() / (double) pageSize);
@@ -144,10 +157,11 @@ public class HelpManager {
     /**
      * Searches through available help nodes for the given array of words
      * and returns help messages according to {@link Player} permissions
-     * 
+     *
      * @param player
      * @param terms
      * @param page
+     *
      * @return
      */
     public ArrayList<String> getHelp(Player player, String[] terms, int page) {
@@ -196,11 +210,11 @@ public class HelpManager {
     /**
      * Displays the given commands description and toolTip,
      * if the permissions allow it.
-     * 
+     *
      * @param caller
-     *            The MR to show the help for
+     *         The MR to show the help for
      * @param commandName
-     *            The command for which help is required
+     *         The command for which help is required
      */
     public void getHelp(MessageReceiver caller, String commandName) {
         HelpNode node = getNode(commandName);
@@ -221,8 +235,9 @@ public class HelpManager {
     /**
      * Get the HelpNode for the given command.
      * Will return <code>null</code> if command is not registered
-     * 
+     *
      * @param command
+     *
      * @return HelpNode || null
      */
     public HelpNode getRawHelp(String command) {
@@ -231,8 +246,9 @@ public class HelpManager {
 
     /**
      * Returns all help nodes that the player has access too.
-     * 
+     *
      * @param caller
+     *
      * @return
      */
     public ArrayList<HelpNode> getRawHelp(MessageReceiver caller) {
@@ -243,9 +259,7 @@ public class HelpManager {
         ArrayList<String> list = new ArrayList<String>(cmds.size() + 1);
         for (CanaryCommand cmd : cmds) {
             if (cmd.meta.helpLookup().isEmpty()) {
-                for (String alias : cmd.meta.aliases()) {
-                    list.add(alias);
-                }
+                Collections.addAll(list, cmd.meta.aliases());
             }
             else {
                 list.add(cmd.meta.helpLookup());
@@ -256,7 +270,7 @@ public class HelpManager {
 
     /**
      * Creates the help context including sub commands from the given node.
-     * 
+     *
      * @param node
      * @param list
      * @param ignoreSubCommands
@@ -283,28 +297,31 @@ public class HelpManager {
     }
 
     private HelpNode getNode(String name) {
-        if (nodes.containsKey(name)) {
-            return nodes.get(name);
-        }
-        for (HelpNode n : nodes.values()) {
-            if (n.hasAlias(name)) {
-                return n;
+        synchronized (nodes) {
+            if (nodes.containsKey(name)) {
+                return nodes.get(name);
             }
+            for (HelpNode n : nodes.values()) {
+                if (n.hasAlias(name)) {
+                    return n;
+                }
+            }
+            return null;
         }
-        return null;
     }
 
     private void removeCommand(String name) {
         if (nodes.containsKey(name)) {
             nodes.remove(name);
         }
-        Iterator<String> itr = nodes.keySet().iterator();
-        while (itr.hasNext()) {
-            HelpNode n = nodes.get(itr.next());
-            if (n.hasAlias(name)) {
-                itr.remove();
+        synchronized (nodes) {
+            Iterator<HelpNode> itr = nodes.values().iterator();
+            while (itr.hasNext()) {
+                HelpNode n = itr.next();
+                if (n.hasAlias(name)) {
+                    itr.remove();
+                }
             }
         }
     }
-
 }

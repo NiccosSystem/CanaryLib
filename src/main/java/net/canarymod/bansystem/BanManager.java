@@ -1,6 +1,7 @@
 package net.canarymod.bansystem;
 
 import java.util.ArrayList;
+
 import net.canarymod.Canary;
 import net.canarymod.ToolBox;
 import net.canarymod.api.entity.living.humanoid.Player;
@@ -8,8 +9,8 @@ import net.canarymod.backbone.BackboneBans;
 
 /**
  * Used to issue bans
- * 
- * @author Chris
+ *
+ * @author Chris (damagefilter)
  */
 public class BanManager {
     private BackboneBans backbone;
@@ -22,9 +23,11 @@ public class BanManager {
 
     /**
      * Issue a permanent ban for this player with a given reason
-     * 
+     *
      * @param player
+     *         the {@link Player} being banned
      * @param reason
+     *         the reason for the ban
      */
     public void issueBan(Player player, String reason) {
         Ban ban = new Ban(player, reason, false);
@@ -33,6 +36,12 @@ public class BanManager {
         backbone.addBan(ban);
     }
 
+    /**
+     * Issues a ban using the given {@link Ban}
+     *
+     * @param ban
+     *         the {@link Ban} to be issued
+     */
     public void issueBan(Ban ban) {
         bans.add(ban);
         backbone.addBan(ban);
@@ -40,20 +49,23 @@ public class BanManager {
 
     /**
      * Issue a temporary ban.
-     * 
+     *
      * @param player
+     *         the {@link Player} being banned
      * @param reason
+     *         the reason for the ban
      * @param time
-     *            The time component must be NUMBER HOUR/DAY/WEEK/MONTH. <br>
-     *            Example: /ban player Being incredibly stupid 5 HOURS If you
-     *            put nothing as time unit, it will evaluate as HOURS!
+     *         The time component must be NUMBER HOUR/DAY/WEEK/MONTH. <br>
+     *         Example: /ban player Being incredibly stupid 5 HOURS If you
+     *         put nothing as time unit, it will evaluate as HOURS!
      */
     public void issueBan(Player player, String reason, String time) {
-        long timeToAdd = 0L;
+        long timeToAdd;
 
         try {
             timeToAdd = parseTimeSpec(time);
-        } catch (NumberFormatException e) {
+        }
+        catch (NumberFormatException e) {
             Canary.logWarning("Invalid time for temp ban specified(" + time + "). Skipping!");
             return;
         }
@@ -64,10 +76,12 @@ public class BanManager {
     }
 
     /**
-     * Ban player by ID
-     * 
+     * Ban player by IP
+     *
      * @param player
+     *         the {@link Player} who's IP is being banned
      * @param reason
+     *         the reason for the ban
      */
     public void issueIpBan(Player player, String reason) {
         Ban ban = new Ban(player, reason, true);
@@ -78,17 +92,23 @@ public class BanManager {
 
     /**
      * Issue an IP Ban with the given amount of time
-     * 
+     *
      * @param player
+     *         the {@link Player} who's IP is being banned
      * @param reason
+     *         the reason for the ban
      * @param time
+     *         The time component must be NUMBER HOUR/DAY/WEEK/MONTH. <br>
+     *         Example: /ban player Being incredibly stupid 5 HOURS If you
+     *         put nothing as time unit, it will evaluate as HOURS!
      */
     public void issueIpBan(Player player, String reason, String time) {
         long timeToAdd = 0L;
 
         try {
             timeToAdd = parseTimeSpec(time);
-        } catch (NumberFormatException e) {
+        }
+        catch (NumberFormatException e) {
             Canary.logWarning("Invalid time for temp ban specified. Skipping!");
         }
         Ban ban = new Ban(player, reason, ToolBox.getUnixTimestamp() + timeToAdd, true);
@@ -108,9 +128,11 @@ public class BanManager {
     /**
      * Check if banned and unban if ban has expired. Returns true if still
      * banned, false otherwise. THIS WILL ALSO WORK FOR IP!
-     * 
+     *
      * @param subject
-     * @return
+     *         the name/ip of the subject who was banned
+     *
+     * @return {@code true} if banned; {@code false} if not
      */
     public boolean isBanned(String subject) {
         Ban test = null;
@@ -119,31 +141,37 @@ public class BanManager {
             if (b.getSubject().equals(subject)) {
                 test = b;
                 break;
-            } else if (b.getIp().equals(subject)) {
+            }
+            else if (b.getIp().equals(subject)) {
                 test = b;
                 break;
             }
         }
         if (test == null) {
             return false;
-        } else if (test.isExpired()) {
+        }
+        else if (test.isExpired()) {
             if (test.isIpBan()) {
                 backbone.liftIpBan(test.getIp());
-            } else {
+            }
+            else {
                 backbone.liftBan(test.getSubject());
             }
             bans.remove(test);
             return false;
-        } else {
+        }
+        else {
             return true;
         }
     }
 
     /**
      * Check if the given IP is banned
-     * 
+     *
      * @param ip
-     * @return
+     *         the IP address
+     *
+     * @return {@code true} if banned; {@code false} if not
      */
     public boolean isIpBanned(String ip) {
         for (Ban b : bans) {
@@ -154,6 +182,14 @@ public class BanManager {
         return false;
     }
 
+    /**
+     * Gets a {@link Ban} for a given player's name
+     *
+     * @param player
+     *         the name of the player
+     *
+     * @return the Ban if exists; {@code null} otherwise
+     */
     public Ban getBan(String player) {
         for (Ban b : bans) {
             if (b.getSubject().equalsIgnoreCase(player)) {
@@ -165,8 +201,9 @@ public class BanManager {
 
     /**
      * Unban a subject, player or ip
-     * 
+     *
      * @param subject
+     *         the name/ip of the subject
      */
     public void unban(String subject) {
         Ban test = null;
@@ -175,7 +212,8 @@ public class BanManager {
             if (b.getSubject().equals(subject)) {
                 test = b;
                 break;
-            } else if (b.getIp().equals(subject)) {
+            }
+            else if (b.getIp().equals(subject)) {
                 test = b;
                 break;
             }
@@ -185,7 +223,8 @@ public class BanManager {
         }
         if (test.isIpBan()) {
             backbone.liftIpBan(test.getIp());
-        } else {
+        }
+        else {
             backbone.liftBan(test.getSubject());
         }
         bans.remove(test);
@@ -193,8 +232,9 @@ public class BanManager {
 
     /**
      * Unban this player (this will NOT work with IPBans!)
-     * 
+     *
      * @param player
+     *         the {@link Player} to unban
      */
     public void unban(Player player) {
         Ban test = null;
@@ -216,11 +256,11 @@ public class BanManager {
 
     /**
      * Get all bans
-     * 
-     * @return
+     *
+     * @return an Array of {@link Ban}(s)
      */
     public Ban[] getAllBans() {
-        Ban[] retT = {};
+        Ban[] retT = { };
 
         return bans.toArray(retT);
     }
@@ -229,8 +269,10 @@ public class BanManager {
      * Take a string and parse an amount of seconds. A String should be
      * formatted like this: number hours|days|months Ex: 1 month and it will
      * return the amount of seconds that contain one month
-     * 
+     *
      * @param ts
+     *         timestring
+     *
      * @return long amount of seconds
      */
     private long parseTimeSpec(String ts) throws NumberFormatException {
@@ -239,26 +281,24 @@ public class BanManager {
         if (split.length < 2) {
             return -1;
         }
-        long seconds;
-
-        try {
-            seconds = Integer.parseInt(split[0]);
-        } catch (NumberFormatException ex) {
-            throw ex;
-        }
+        long seconds = Integer.parseInt(split[0]);
 
         if (split[1].toLowerCase().startsWith("hour")) {
             seconds *= 3600;
-        } else if (split[1].toLowerCase().startsWith("day")) {
+        }
+        else if (split[1].toLowerCase().startsWith("day")) {
             seconds *= 86400;
-        } else if (split[1].toLowerCase().startsWith("week")) {
+        }
+        else if (split[1].toLowerCase().startsWith("week")) {
             seconds *= 604800;
-        } else if (split[1].toLowerCase().startsWith("month")) {
+        }
+        else if (split[1].toLowerCase().startsWith("month")) {
             seconds *= 2629743;
         }
         return seconds;
     }
 
+    /** Reloads the bans from datasource */
     public void reload() {
         bans.clear();
         bans = backbone.loadBans();

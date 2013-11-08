@@ -2,6 +2,11 @@ package net.canarymod.api.world;
 
 import java.util.HashMap;
 
+/**
+ * Static class of WorldTypes
+ *
+ * @author Chris (damagefilter)
+ */
 public class WorldType {
     public static WorldType DEFAULT = new WorldType("DEFAULT");
     public static WorldType SUPERFLAT = new WorldType("FLAT");
@@ -23,6 +28,7 @@ public class WorldType {
      * Register a new WorldType.
      *
      * @param name
+     *
      * @return
      */
     public static boolean registerWorldType(String name) {
@@ -43,6 +49,7 @@ public class WorldType {
      * This may return null if the requested WorldType does not exist!
      *
      * @param string
+     *
      * @return
      */
     public static WorldType fromString(String string) {

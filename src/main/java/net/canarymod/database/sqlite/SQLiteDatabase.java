@@ -22,6 +22,14 @@ import net.canarymod.Canary;
 import net.canarymod.config.Configuration;
 import net.canarymod.database.Column;
 import net.canarymod.database.Column.DataType;
+import static net.canarymod.database.Column.DataType.BOOLEAN;
+import static net.canarymod.database.Column.DataType.BYTE;
+import static net.canarymod.database.Column.DataType.DOUBLE;
+import static net.canarymod.database.Column.DataType.FLOAT;
+import static net.canarymod.database.Column.DataType.INTEGER;
+import static net.canarymod.database.Column.DataType.LONG;
+import static net.canarymod.database.Column.DataType.SHORT;
+import static net.canarymod.database.Column.DataType.STRING;
 import net.canarymod.database.DataAccess;
 import net.canarymod.database.Database;
 import net.canarymod.database.exceptions.DatabaseAccessException;
@@ -31,7 +39,7 @@ import net.canarymod.database.exceptions.DatabaseWriteException;
 
 /**
  * SQLite Database
- * 
+ *
  * @author Jason (darkdiplomat)
  */
 public class SQLiteDatabase extends Database {
@@ -39,6 +47,7 @@ public class SQLiteDatabase extends Database {
     private Connection conn; // One Connection, All the Time
     private static SQLiteDatabase instance;
     private final String LIST_REGEX = "\u00B6";
+    private final String NULL_STRING = "NULL";
     private final String database;
 
     private SQLiteDatabase() {
@@ -50,7 +59,8 @@ public class SQLiteDatabase extends Database {
         database = Configuration.getDbConfig().getDatabaseName();
         try {
             conn = DriverManager.getConnection("jdbc:sqlite:" + database + ".db");
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             Canary.logStacktrace("Failed to create connection to SQLite database", ex);
         }
     }
@@ -75,7 +85,7 @@ public class SQLiteDatabase extends Database {
             HashMap<Column, Object> columns = data.toDatabaseEntryList();
             Iterator<Column> it = columns.keySet().iterator();
 
-            Column column = null;
+            Column column;
             while (it.hasNext()) {
                 column = it.next();
                 if (!column.autoIncrement()) {
@@ -95,8 +105,8 @@ public class SQLiteDatabase extends Database {
             int i = 1;
             for (Column c : columns.keySet()) {
                 if (!c.autoIncrement()) {
-                    if (column.isList()) {
-                        ps.setObject(i, getString((List<?>) columns.get(column)));
+                    if (c.isList()) {
+                        ps.setObject(i, getString((List<?>) columns.get(c)));
                     }
                     ps.setObject(i, convert(columns.get(c)));
                     i++;
@@ -106,9 +116,11 @@ public class SQLiteDatabase extends Database {
             if (ps.executeUpdate() == 0) {
                 throw new DatabaseWriteException("Error inserting SQLite: no rows updated!");
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace(dtie.getMessage(), dtie);
         }
         finally {
@@ -129,7 +141,7 @@ public class SQLiteDatabase extends Database {
             StringBuilder where = new StringBuilder();
             HashMap<Column, Object> columns = data.toDatabaseEntryList();
             Iterator<Column> it = columns.keySet().iterator();
-            Column column = null;
+            Column column;
 
             while (it.hasNext()) {
                 column = it.next();
@@ -156,9 +168,11 @@ public class SQLiteDatabase extends Database {
 
             ps = conn.prepareStatement(String.format(updateClause, set.toString(), where.toString()));
             ps.execute();
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
-        } catch (DatabaseTableInconsistencyException dbtiex) {
+        }
+        catch (DatabaseTableInconsistencyException dbtiex) {
             Canary.logStacktrace(dbtiex.getMessage(), dbtiex);
         }
         finally {
@@ -183,7 +197,8 @@ public class SQLiteDatabase extends Database {
             }
             ps = conn.prepareStatement(buildState.toString());
             ps.execute();
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
         }
         finally {
@@ -202,27 +217,35 @@ public class SQLiteDatabase extends Database {
                     for (Column column : dataset.getTableLayout()) {
                         if (column.isList()) {
                             dataSet.put(column.columnName(), getList(column.dataType(), rs.getString(column.columnName())));
-                        } else if (column.dataType() == DataType.BOOLEAN) {
+                        }
+                        else if (column.dataType() == DataType.BOOLEAN) {
                             dataSet.put(column.columnName(), rs.getBoolean(column.columnName()));
-                        } else {
+                        }
+                        else {
                             dataSet.put(column.columnName(), rs.getObject(column.columnName()));
                         }
                     }
                 }
             }
-        } catch (DatabaseReadException dre) {
+        }
+        catch (DatabaseReadException dre) {
             Canary.logStacktrace(dre.getMessage(), dre);
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace(dtie.getMessage(), dtie);
         }
         finally {
             try {
-                PreparedStatement st = rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
-                closeRS(rs);
-                closePS(st);
-            } catch (SQLException ex) {
+                if (rs != null) {
+                    PreparedStatement st = rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
+                    closeRS(rs);
+                    closePS(st);
+                }
+            }
+            catch (SQLException ex) {
                 Canary.logStacktrace(ex.getMessage(), ex);
             }
         }
@@ -230,7 +253,8 @@ public class SQLiteDatabase extends Database {
             if (!dataSet.isEmpty()) {
                 dataset.load(dataSet);
             }
-        } catch (DatabaseAccessException ex) {
+        }
+        catch (DatabaseAccessException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
         }
     }
@@ -247,9 +271,11 @@ public class SQLiteDatabase extends Database {
                     for (Column column : typeTemplate.getTableLayout()) {
                         if (column.isList()) {
                             dataSet.put(column.columnName(), getList(column.dataType(), rs.getString(column.columnName())));
-                        } else if (column.dataType() == DataType.BOOLEAN) {
+                        }
+                        else if (column.dataType() == DataType.BOOLEAN) {
                             dataSet.put(column.columnName(), rs.getBoolean(column.columnName()));
-                        } else {
+                        }
+                        else {
                             dataSet.put(column.columnName(), rs.getObject(column.columnName()));
                         }
                     }
@@ -257,19 +283,25 @@ public class SQLiteDatabase extends Database {
                 }
             }
 
-        } catch (DatabaseReadException dre) {
+        }
+        catch (DatabaseReadException dre) {
             Canary.logStacktrace(dre.getMessage(), dre);
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace(dtie.getMessage(), dtie);
         }
         finally {
             try {
-                PreparedStatement st = rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
-                closeRS(rs);
-                closePS(st);
-            } catch (SQLException ex) {
+                if (rs != null) {
+                    PreparedStatement st = rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
+                    closeRS(rs);
+                    closePS(st);
+                }
+            }
+            catch (SQLException ex) {
                 Canary.logStacktrace(ex.getMessage(), ex);
             }
         }
@@ -280,7 +312,8 @@ public class SQLiteDatabase extends Database {
                 datasets.add(newData);
             }
 
-        } catch (DatabaseAccessException dae) {
+        }
+        catch (DatabaseAccessException dae) {
             Canary.logStacktrace(dae.getMessage(), dae);
         }
     }
@@ -297,13 +330,14 @@ public class SQLiteDatabase extends Database {
             rs = metadata.getTables(null, null, schemaTemplate.getName(), null);
             if (!rs.next()) {
                 createTable(schemaTemplate);
-            } else {
+            }
+            else {
 
                 LinkedList<String> toRemove = new LinkedList<String>();
                 HashMap<String, Column> toAdd = new HashMap<String, Column>();
                 Iterator<Column> it = schemaTemplate.getTableLayout().iterator();
 
-                Column column = null;
+                Column column;
                 while (it.hasNext()) {
                     column = it.next();
                     toAdd.put(column.columnName(), column);
@@ -312,7 +346,8 @@ public class SQLiteDatabase extends Database {
                 for (String col : getColumnNames(schemaTemplate)) {
                     if (!toAdd.containsKey(col)) {
                         toRemove.add(col);
-                    } else {
+                    }
+                    else {
                         toAdd.remove(col);
                     }
                 }
@@ -324,9 +359,11 @@ public class SQLiteDatabase extends Database {
                     insertColumn(schemaTemplate.getName(), entry.getValue());
                 }
             }
-        } catch (SQLException sqle) {
+        }
+        catch (SQLException sqle) {
             throw new DatabaseWriteException("Error updating SQLite schema: " + sqle.getMessage());
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace("Error updating SQLite schema." + dtie.getMessage(), dtie);
         }
         finally {
@@ -342,7 +379,7 @@ public class SQLiteDatabase extends Database {
             StringBuilder fields = new StringBuilder();
             HashMap<Column, Object> columns = data.toDatabaseEntryList();
             Iterator<Column> it = columns.keySet().iterator();
-            Column column = null;
+            Column column;
             while (it.hasNext()) {
                 column = it.next();
                 fields.append("`").append(column.columnName()).append("` ");
@@ -372,9 +409,11 @@ public class SQLiteDatabase extends Database {
             if (ps.execute()) {
                 Canary.logDebug("Statment Executed!");
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException("Error creating SQLite table '" + data.getName() + "'. " + ex.getMessage());
-        } catch (DatabaseTableInconsistencyException ex) {
+        }
+        catch (DatabaseTableInconsistencyException ex) {
             Canary.logStacktrace(ex.getMessage() + " Error creating SQLite table '" + data.getName() + "'. ", ex);
         }
         finally {
@@ -390,7 +429,8 @@ public class SQLiteDatabase extends Database {
                 ps = conn.prepareStatement("ALTER TABLE `" + tableName + "` ADD `" + column.columnName() + "` " + getDataTypeSyntax(column.dataType()));
                 ps.execute();
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException("Error adding SQLite collumn: " + column.columnName());
         }
         finally {
@@ -407,7 +447,8 @@ public class SQLiteDatabase extends Database {
                 ps = conn.prepareStatement("ALTER TABLE `" + tableName + "` DROP `" + columnName + "`");
                 ps.execute();
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException("Error deleting SQLite collumn: " + columnName);
         }
         finally {
@@ -424,7 +465,8 @@ public class SQLiteDatabase extends Database {
             ps.setObject(1, convert(value));
             toRet = ps.execute();
 
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException("Error checking Value for SQLite Primary "
                     + "Key in Table `" + data.getName() + "` for key `" + primaryKey
                     + "` and value '" + String.valueOf(value) + "'.");
@@ -445,7 +487,7 @@ public class SQLiteDatabase extends Database {
             HashMap<Column, Object> columns = data.toDatabaseEntryList();
             Iterator<Column> it = columns.keySet().iterator();
 
-            Column column = null;
+            Column column;
             while (it.hasNext()) {
                 column = it.next();
                 if (!column.autoIncrement()) {
@@ -474,10 +516,12 @@ public class SQLiteDatabase extends Database {
                 toRet = rs.next();
             }
 
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException(ex.getMessage() + " Error checking SQLite Entry Key in "
                     + data.toString());
-        } catch (DatabaseTableInconsistencyException ex) {
+        }
+        catch (DatabaseTableInconsistencyException ex) {
             Logger.getLogger(SQLiteDatabase.class.getName()).log(Level.SEVERE, null, ex);
         }
         finally {
@@ -489,16 +533,17 @@ public class SQLiteDatabase extends Database {
 
     /**
      * Safely Close a ResultSet.
-     * 
+     *
      * @param rs
-     *            ResultSet to close.
+     *         ResultSet to close.
      */
     public void closeRS(ResultSet rs) {
         if (rs != null) {
             try {
                 // org.sqlite.RS doesn't have a isClosed()
                 rs.close();
-            } catch (SQLException sqle) {
+            }
+            catch (SQLException sqle) {
                 Canary.logStacktrace("Error closing ResultSet in SQLite database.", sqle);
             }
         }
@@ -506,16 +551,17 @@ public class SQLiteDatabase extends Database {
 
     /**
      * Safely Close a PreparedStatement.
-     * 
+     *
      * @param ps
-     *            PreparedStatement to close.
+     *         PreparedStatement to close.
      */
     public void closePS(PreparedStatement ps) {
         if (ps != null) {
             try {
                 // org.sqlite.PrepStmt doesn't have isClosed()
                 ps.close();
-            } catch (SQLException sqle) {
+            }
+            catch (SQLException sqle) {
                 Canary.logStacktrace("Error closing PreparedStatement in SQLite database.", sqle);
             }
         }
@@ -526,7 +572,7 @@ public class SQLiteDatabase extends Database {
     }
 
     public ResultSet getResultSet(Connection conn, String tableName, String[] fieldNames, Object[] fieldValues, boolean limitOne) throws DatabaseReadException {
-        PreparedStatement ps = null;
+        PreparedStatement ps;
         ResultSet toRet = null;
 
         try {
@@ -537,7 +583,8 @@ public class SQLiteDatabase extends Database {
                     sb.append("`").append(fieldNames[i]);
                     if (i + 1 < fieldNames.length) {
                         sb.append("`=? AND ");
-                    } else {
+                    }
+                    else {
                         sb.append("`=?");
                     }
                 }
@@ -549,19 +596,23 @@ public class SQLiteDatabase extends Database {
                     ps.setObject(i + 1, convert(fieldValues[i]));
                 }
                 toRet = ps.executeQuery();
-            } else {
+            }
+            else {
                 if (limitOne) {
                     ps = conn.prepareStatement("SELECT * FROM `" + tableName + "` LIMIT 1");
-                } else {
+                }
+                else {
                     ps = conn.prepareStatement("SELECT * FROM `" + tableName + "`");
                 }
 
                 toRet = ps.executeQuery();
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseReadException("Error Querying SQLite ResultSet in "
                     + tableName);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             Logger.getLogger(SQLiteDatabase.class.getName()).log(Level.SEVERE, null, ex);
         }
         return toRet;
@@ -582,7 +633,8 @@ public class SQLiteDatabase extends Database {
                 columnName = rsMeta.getColumnLabel(index);
                 columns.add(columnName);
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
         }
         finally {
@@ -590,7 +642,8 @@ public class SQLiteDatabase extends Database {
             if (statement != null) {
                 try {
                     statement.close();
-                } catch (SQLException ex) {
+                }
+                catch (SQLException ex) {
                     Logger.getLogger(SQLiteDatabase.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
@@ -645,19 +698,26 @@ public class SQLiteDatabase extends Database {
     public int getJDBCDataType(Object o) {
         if (o instanceof Byte) {
             return Types.INTEGER;
-        } else if (o instanceof Integer) {
+        }
+        else if (o instanceof Integer) {
             return Types.INTEGER;
-        } else if (o instanceof Float) {
+        }
+        else if (o instanceof Float) {
             return Types.DOUBLE;
-        } else if (o instanceof Double) {
+        }
+        else if (o instanceof Double) {
             return Types.DOUBLE;
-        } else if (o instanceof Long) {
+        }
+        else if (o instanceof Long) {
             return Types.BIGINT;
-        } else if (o instanceof Short) {
+        }
+        else if (o instanceof Short) {
             return Types.TINYINT;
-        } else if (o instanceof String) {
+        }
+        else if (o instanceof String) {
             return Types.BLOB;
-        } else if (o instanceof Boolean) {
+        }
+        else if (o instanceof Boolean) {
             return Types.TINYINT;
         }
         return 0;
@@ -665,8 +725,9 @@ public class SQLiteDatabase extends Database {
 
     /**
      * Replaces '*' character with '\\*' if the Object is a String.
-     * 
+     *
      * @param o
+     *
      * @return
      */
     private Object convert(Object o) {
@@ -678,9 +739,10 @@ public class SQLiteDatabase extends Database {
 
     /**
      * Gets a Java List representation from the SQLite String.
-     * 
+     *
      * @param type
      * @param field
+     *
      * @return
      */
     private List<Comparable<?>> getList(Column.DataType type, String field) {
@@ -690,42 +752,74 @@ public class SQLiteDatabase extends Database {
         }
         switch (type) {
             case BYTE:
-                for (String s : field.split(LIST_REGEX)) {
+                for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Byte.valueOf(s));
                 }
                 break;
             case INTEGER:
-                for (String s : field.split(LIST_REGEX)) {
+                for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Integer.valueOf(s));
                 }
                 break;
             case FLOAT:
-                for (String s : field.split(LIST_REGEX)) {
+                for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Float.valueOf(s));
                 }
                 break;
             case DOUBLE:
-                for (String s : field.split(LIST_REGEX)) {
+                for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Double.valueOf(s));
                 }
                 break;
             case LONG:
-                for (String s : field.split(LIST_REGEX)) {
+                for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Long.valueOf(s));
                 }
                 break;
             case SHORT:
-                for (String s : field.split(LIST_REGEX)) {
+                for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Short.valueOf(s));
                 }
                 break;
             case STRING:
-                for (String s : field.split(LIST_REGEX)) {
+                for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(s);
                 }
                 break;
             case BOOLEAN:
-                for (String s : field.split(LIST_REGEX)) {
+                for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Boolean.valueOf(s));
                 }
                 break;
@@ -735,8 +829,9 @@ public class SQLiteDatabase extends Database {
 
     /**
      * Get the database entry for a Java List.
-     * 
+     *
      * @param list
+     *
      * @return a string representation of the passed list.
      */
     public String getString(List<?> list) {
@@ -744,12 +839,16 @@ public class SQLiteDatabase extends Database {
         Iterator<?> it = list.iterator();
         while (it.hasNext()) {
             Object o = it.next();
-            sb.append(String.valueOf(o));
+            if (o == null) {
+                sb.append(NULL_STRING);
+            }
+            else {
+                sb.append(String.valueOf(o));
+            }
             if (it.hasNext()) {
-                sb.append(LIST_REGEX);
+                sb.append(this.LIST_REGEX);
             }
         }
         return sb.toString();
     }
-
 }

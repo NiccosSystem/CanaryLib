@@ -5,20 +5,29 @@ import net.canarymod.ToolBox;
 import net.canarymod.Translator;
 import net.canarymod.api.Server;
 import net.canarymod.api.entity.living.humanoid.Player;
+import net.canarymod.api.world.blocks.CommandBlock;
 import net.canarymod.bansystem.Ban;
 import net.canarymod.chat.MessageReceiver;
 import net.canarymod.commandsys.CommandException;
+import net.canarymod.commandsys.NativeCommand;
 import net.canarymod.hook.player.BanHook;
 import net.visualillusionsent.utils.StringUtils;
 
-public class BanCommand {
+/**
+ * Command to ban players by name
+ *
+ * @author Chris (damagefilter)
+ */
+public class BanCommand implements NativeCommand {
 
     public void execute(MessageReceiver caller, String[] parameters) {
         if (caller instanceof Server) {
             console(caller, parameters);
-        } else if (caller instanceof Player) {
-            player((Player) caller, parameters);
-        } else {
+        }
+        else if ((caller instanceof Player) || (caller instanceof CommandBlock)) {
+            player(caller, parameters);
+        }
+        else {
             throw new CommandException(Translator.translateAndFormat("unknown messagereceiver", caller.getClass().getSimpleName()));
         }
     }
@@ -37,7 +46,8 @@ public class BanCommand {
             try {
                 timestamp = ToolBox.parseTime(Long.parseLong(cmd[cmd.length - 2]), cmd[cmd.length - 1]);
                 reason = StringUtils.joinString(cmd, " ", 2, cmd.length - 2);
-            } catch (NumberFormatException e) {
+            }
+            catch (NumberFormatException e) {
                 reason = StringUtils.joinString(cmd, " ", 2);
                 timestamp = -1L;
             }
@@ -60,7 +70,7 @@ public class BanCommand {
         }
     }
 
-    private void player(Player caller, String[] cmd) {
+    private void player(MessageReceiver caller, String[] cmd) {
         if (cmd.length < 2) {
             Canary.help().getHelp(caller, "ban");
             return;
@@ -74,7 +84,8 @@ public class BanCommand {
             try {
                 timestamp = ToolBox.parseTime(Long.parseLong(cmd[cmd.length - 2]), cmd[cmd.length - 1]);
                 reason = StringUtils.joinString(cmd, " ", 2, cmd.length - 2);
-            } catch (NumberFormatException e) {
+            }
+            catch (NumberFormatException e) {
                 reason = StringUtils.joinString(cmd, " ", 2);
                 timestamp = -1L;
             }
@@ -85,14 +96,14 @@ public class BanCommand {
         if (p != null) {
             ban.setSubject(p.getName());
             Canary.bans().issueBan(ban);
-            Canary.hooks().callHook(new BanHook(p, p.getIP(), caller, reason, timestamp));
+            Canary.hooks().callHook(new BanHook(p, p.getIP(), (caller instanceof Player) ? (Player)caller : null, reason, timestamp));
             caller.notice(Translator.translateAndFormat("ban banned", p.getName()));
             p.kick(reason);
         }
         else {
             ban.setSubject(cmd[1]);
             Canary.bans().issueBan(ban);
-            Canary.hooks().callHook(new BanHook(null, "xxx.xxx.xxx.xxx", caller, reason, timestamp));
+            Canary.hooks().callHook(new BanHook(null, "xxx.xxx.xxx.xxx", (caller instanceof Player) ? (Player)caller : null, reason, timestamp));
             caller.notice(Translator.translateAndFormat("ban banned", cmd[1]));
         }
     }

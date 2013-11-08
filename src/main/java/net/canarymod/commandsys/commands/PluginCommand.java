@@ -4,19 +4,21 @@ import net.canarymod.Canary;
 import net.canarymod.Translator;
 import net.canarymod.chat.MessageReceiver;
 import net.canarymod.commandsys.CommandException;
+import net.canarymod.commandsys.NativeCommand;
 
-public class PluginCommand {
+/**
+ * Command to enable, disable or reload plugins  
+ *
+ * @author Chris (damagefilter)
+ */
+public class PluginCommand implements NativeCommand {
     private boolean disable;
     private boolean reload;
     private boolean permanent = false;
 
     public PluginCommand(boolean disable, boolean reload) {
         this.reload = reload;
-        if (reload) {
-            disable = false;
-        } else {
-            this.disable = disable;
-        }
+        this.disable = reload ? false : disable;
     }
 
     public void execute(MessageReceiver caller, String[] parameters) {
@@ -31,7 +33,7 @@ public class PluginCommand {
                 disable(caller, plugin, permanent);
             }
             else {
-                enable(caller, plugin, permanent);
+                enable(caller, plugin);
             }
         }
     }
@@ -45,7 +47,7 @@ public class PluginCommand {
         }
     }
 
-    private void enable(MessageReceiver caller, String plugin, boolean permanent) {
+    private void enable(MessageReceiver caller, String plugin) {
         // TODO: Take into consideration the permanent value!
         if (Canary.loader().enablePlugin(plugin)) {
             caller.notice(Translator.translateAndFormat("plugin enabled", plugin));
@@ -69,22 +71,18 @@ public class PluginCommand {
 
     /**
      * Check if we have a permanent disable/enable requests
-     * 
+     *
      * @param params
+     *
      * @return
      */
     private boolean getPermanentParameter(String[] params) {
-        String test = params[params.length - 2];
-
-        if (test.equalsIgnoreCase("-p")) {
-            return true;
-        }
-        return false;
+        return params[params.length - 2].equalsIgnoreCase("-p");
     }
 
     /**
      * Analyze the command input and set the disable, permanent and reload booleans accordingly
-     * 
+     *
      * @param params
      */
     private void checkConditions(String[] params) {
@@ -96,14 +94,17 @@ public class PluginCommand {
             if (params[1].equalsIgnoreCase("reload")) {
                 reload = true;
                 disable = false;
-            } else if (params[1].equalsIgnoreCase("enable")) {
+            }
+            else if (params[1].equalsIgnoreCase("enable")) {
                 disable = false;
                 reload = false;
-            } else {
+            }
+            else {
                 disable = true;
                 reload = false;
             }
-        } else {
+        }
+        else {
             if (params.length == 3) {
                 // we have a permanent condition (still check if the flag is right!)
                 this.permanent = getPermanentParameter(params);
@@ -111,13 +112,16 @@ public class PluginCommand {
             if (params[0].toLowerCase().contains("reloadplugin")) {
                 reload = true;
                 disable = false;
-            } else if (params[0].toLowerCase().contains("enableplugin")) {
+            }
+            else if (params[0].toLowerCase().contains("enableplugin")) {
                 disable = false;
                 reload = false;
-            } else if (params[0].toLowerCase().contains("disableplugin")) {
+            }
+            else if (params[0].toLowerCase().contains("disableplugin")) {
                 disable = true;
                 reload = false;
-            } else {
+            }
+            else {
                 throw new CommandException("Found invalid command structure! Should be a plugin command. But command is " + params[0]);
             }
 

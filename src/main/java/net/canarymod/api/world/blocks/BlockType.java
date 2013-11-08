@@ -2,6 +2,11 @@ package net.canarymod.api.world.blocks;
 
 import java.util.HashMap;
 
+/**
+ * Static class of BlockTypes
+ *
+ * @author Chris (damagefilter)
+ */
 public final class BlockType {
     public static final BlockType Air = new BlockType(0, 0, "Air");
     public static final BlockType Stone = new BlockType(1, 0, "Stone");
@@ -56,7 +61,7 @@ public final class BlockType {
     public static final BlockType PistonExtended = new BlockType(34, 0, "Extended Piston");
     public static final BlockType WoolWhite = new BlockType(35, 0, "White Wool");
     public static final BlockType WoolOrange = new BlockType(35, 1, "Orange Wool");
-    public static final BlockType WoolLightPurple = new BlockType(35, 2, "Light Purple Wool");
+    public static final BlockType WoolMagenta = new BlockType(35, 2, "Magenta Wool");
     public static final BlockType WoolLightBlue = new BlockType(35, 3, "Light Blue Wool");
     public static final BlockType WoolYellow = new BlockType(35, 4, "Yellow Wool");
     public static final BlockType WoolLightGreen = new BlockType(35, 5, "Light Green Wool");
@@ -138,14 +143,14 @@ public final class BlockType {
     public static final BlockType Reed = new BlockType(83, 0, "Sugar Cane");
     public static final BlockType Jokebox = new BlockType(84, 0, "Jukebox");
     public static final BlockType Fence = new BlockType(85, 0, "Fence");
-    public static final BlockType Pumpkin = new BlockType(86, 0, "Pumpking");
+    public static final BlockType Pumpkin = new BlockType(86, 0, "Pumpkin");
     public static final BlockType Netherrack = new BlockType(87, 0, "Netherrack");
     public static final BlockType SoulSand = new BlockType(88, 0, "Soul Sand");
     public static final BlockType GlowStone = new BlockType(89, 0, "Glowstone");
     public static final BlockType Portal = new BlockType(90, 0, "Nether Portal");
     public static final BlockType JackOLantern = new BlockType(91, 0, "Jack 'o' Lantern");
     public static final BlockType Cake = new BlockType(92, 0, "Cake");
-    public static final BlockType RedstoneRepeaterOff = new BlockType(93, 0, "Redtsone Repeater off");
+    public static final BlockType RedstoneRepeaterOff = new BlockType(93, 0, "Redstone Repeater off");
     public static final BlockType RedstoneRepeaterOn = new BlockType(94, 0, "Redstone Repeater on");
     public static final BlockType LockedChest = new BlockType(95, 0, "Locked Chest");
     public static final BlockType Trapdoor = new BlockType(96, 0, "Trapdoor");
@@ -247,7 +252,8 @@ public final class BlockType {
     public static final BlockType GreenStainedClay = new BlockType(159, 13, "Green Stained Clay");
     public static final BlockType RedStainedClay = new BlockType(159, 14, "Red Stained Clay");
     public static final BlockType BlackStainedClay = new BlockType(159, 15, "Black Stained Clay");
-    // 160 - 170 MIA
+    // 160 - 169 MIA
+    public static final BlockType HayBale = new BlockType(170, 0, "Hay Bale");
     public static final BlockType WhiteCarpet = new BlockType(171, 0, "White Carpet");
     public static final BlockType OrangeCarpet = new BlockType(171, 1, "Orange Carpet");
     public static final BlockType MagentaCarpet = new BlockType(171, 2, "Magenta Carpet");
@@ -269,46 +275,31 @@ public final class BlockType {
 
     private final short id;
     private final short data;
+    private final String displayName;
     private final String machineName;
 
     private static HashMap<String, BlockType> blockTypes;
 
     public BlockType(short id, short data) {
-        if (blockTypes == null) {
-            blockTypes = new HashMap<String, BlockType>();
-        }
-        this.id = id;
-        this.data = data;
-        this.machineName = "unnamed_block_" + id + "_" + data;
-        if (!blockTypes.containsKey(machineName)) {
-            blockTypes.put(machineName, this);
-        } else {
-            throw new CustomBlockTypeException("BlockType '" + machineName + "' already exists!");
-        }
+        this(id, data, "unnamed_block_" + id + "_" + data);
     }
 
     /**
      * Constructs a BlockType from integers.
      * Note if your id's exceed 32000, there will be errors
      * so make sure your block data and id are clamped to this value
-     * 
+     *
      * @param id
-     *            the ID for the Block
+     *         the ID for the Block
      * @param data
-     *            the Data for the Block
+     *         the Data for the Block
      */
     public BlockType(int id, int data) {
-        if (blockTypes == null) {
-            blockTypes = new HashMap<String, BlockType>();
-        }
-        this.id = (short) id;
-        this.data = (short) data;
-        this.machineName = "unnamed_block_" + id + "_" + data;
-        if (!blockTypes.containsKey(machineName)) {
-            blockTypes.put(machineName, this);
-        } else {
-            throw new CustomBlockTypeException("BlockType '" + machineName + "' already exists!");
-        }
+        this(id, data, "unnamed_block_" + id + "_" + data);
+    }
+
+    public BlockType(int id, String name) {
+        this(id, 0, name);
     }
 
     /**
@@ -316,13 +307,13 @@ public final class BlockType {
      * if a BlockType with the same name doesn't already exist.
      * IF a BlockType with the given name already exists, nothing will happen to
      * the BlockType list, you can still use this BlockType if you need to
-     * 
+     *
      * @param id
-     *            the block id
+     *         the block id
      * @param data
-     *            the block data
+     *         the block data
      * @param name
-     *            the block name
+     *         the block name
      */
     public BlockType(int id, int data, String name) {
         if (blockTypes == null) {
@@ -333,18 +324,19 @@ public final class BlockType {
         }
         this.id = (short) id;
         this.data = (short) data;
-
+        this.displayName = name;
         this.machineName = name.replace(" ", "").toLowerCase();
         if (!blockTypes.containsKey(name)) {
             blockTypes.put(name, this);
-        } else {
+        }
+        else {
             throw new CustomBlockTypeException("BlockType '" + name + "' already exists!");
         }
     }
 
     /**
      * Get the ID of this BlockType
-     * 
+     *
      * @return data
      */
     public short getData() {
@@ -353,7 +345,7 @@ public final class BlockType {
 
     /**
      * Get the ID of this BlockType
-     * 
+     *
      * @return id
      */
     public short getId() {
@@ -361,10 +353,19 @@ public final class BlockType {
     }
 
     /**
+     * Gets the readable name of this BlockType.
+     *
+     * @return the display name
+     */
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    /**
      * Returns a "machine readable" name.
      * That is: a representation of the Block Type name
      * in lowercase letters without whitespaces.
-     * 
+     *
      * @return machine name
      */
     public String getMachineName() {
@@ -374,9 +375,10 @@ public final class BlockType {
     /**
      * Get a custom block type.
      * Returns null if the requested BlockType does not exist.
-     * 
+     *
      * @param name
-     *            the machine name or the display name of the block type in question
+     *         the machine name or the display name of the block type in question
+     *
      * @return the custom {@link BlockType}
      */
     public static BlockType getCustomBlockType(String name) {
@@ -396,9 +398,10 @@ public final class BlockType {
     /**
      * Get the BlockType according to the given ID.
      * This will return null if there is no ItemType with this id.
-     * 
+     *
      * @param id
-     *            the id
+     *         the id
+     *
      * @return the associated {@link BlockType} or {@code null}
      */
     public static BlockType fromId(int id) {
@@ -415,11 +418,12 @@ public final class BlockType {
     /**
      * Get the BlockType according to the given ID and Data.
      * This will return null if there is no BlockType with this id and data.
-     * 
+     *
      * @param id
-     *            the id
+     *         the id
      * @param data
-     *            the data value
+     *         the data value
+     *
      * @return the associated {@link BlockType} or {@code null}
      */
     public static BlockType fromIdAndData(int id, int data) {
@@ -436,9 +440,10 @@ public final class BlockType {
     /**
      * Returns an BlockType according to its name as defined in ItemType
      * This returns null if there is no BlockType with this name.
-     * 
+     *
      * @param name
-     *            The machine name or the display name
+     *         The machine name or the display name
+     *
      * @return the associated {@link BlockType} or {@code null}
      */
     public static BlockType fromString(String name) {
@@ -453,6 +458,15 @@ public final class BlockType {
             return null;
         }
         return blockTypes.get(name);
+    }
+
+    /**
+     * Gets an array of all ItemTypes
+     *
+     * @return all ItemTypes
+     */
+    public static BlockType[] values() {
+        return blockTypes.values().toArray(new BlockType[blockTypes.size()]);
     }
 
 }

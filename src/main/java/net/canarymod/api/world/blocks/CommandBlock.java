@@ -14,7 +14,7 @@ public interface CommandBlock extends TileEntity, MessageReceiver {
      * Sets the CommandBlock's command
      *
      * @param command
-     *            the command to execute when this block is activated
+     *         the command to execute when this block is activated
      */
     public void setCommand(String command);
 
@@ -25,9 +25,7 @@ public interface CommandBlock extends TileEntity, MessageReceiver {
      */
     public String getCommand();
 
-    /**
-     * Run this CommandBlock's command
-     */
+    /** Run this CommandBlock's command */
     public void activate();
 
     /**
@@ -35,7 +33,7 @@ public interface CommandBlock extends TileEntity, MessageReceiver {
      * Default is '@'
      *
      * @param prefix
-     *            the prefix to use
+     *         the prefix to use
      */
     public void setPrefix(String prefix);
 
@@ -57,7 +55,9 @@ public interface CommandBlock extends TileEntity, MessageReceiver {
     /**
      * Sets the group that is used to handle CommandBlock permissions,
      * but only for this command block.
+     *
      * @param group
+     *         the {@link Group} to give the CommandBlock
      */
     public void setGroup(Group group);
 

@@ -8,8 +8,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+
 import net.canarymod.Canary;
 import net.canarymod.CanaryClassLoader;
+import net.canarymod.motd.MessageOfTheDay;
 import net.canarymod.chat.Colors;
 import net.canarymod.hook.system.PluginDisableHook;
 import net.canarymod.hook.system.PluginEnableHook;
@@ -18,9 +20,9 @@ import net.visualillusionsent.utils.PropertiesFile;
 
 /**
  * Plugin Loading and Management Class
- * <p>
+ * <p/>
  * Handles loading, unloading, enabling, disabling, and dependency resolving
- * 
+ *
  * @author Jason (darkdiplomat)
  * @author Chris (damagefilter)
  * @author Jos
@@ -82,14 +84,15 @@ public final class PluginLoader {
 
     /**
      * Get the Canary.inf from a jar file
-     * 
+     *
      * @param filename
      * @param priorityBase
-     *            The base for plugin priority which is used to calculate the priority of new Plugins
+     *         The base for plugin priority which is used to calculate the priority of new Plugins
+     *
      * @return
      */
     private final PropertiesFile scan(String filename, int priorityBase) {
-        PropertiesFile inf = null;
+        PropertiesFile inf;
         try {
             File file = new File("plugins/" + filename);
             String jarName = filename.substring(0, filename.lastIndexOf("."));
@@ -112,7 +115,8 @@ public final class PluginLoader {
             else if (pluginPriorities.getInt(inf.getString("name")) < 0) {
                 return null;
             }
-        } catch (Throwable ex) {
+        }
+        catch (Throwable ex) {
             Canary.logStacktrace("Exception while loading plugin jar '" + filename + "' (Canary.inf missing?)", ex);
             return null;
         }
@@ -122,7 +126,7 @@ public final class PluginLoader {
 
     /**
      * This recursive method actually solves the dependency lists
-     * 
+     *
      * @param node
      * @param resolved
      */
@@ -173,7 +177,8 @@ public final class PluginLoader {
                     return plugins.get(name);
                 }
 
-            } catch (Throwable thrown) {
+            }
+            catch (Throwable thrown) {
                 Canary.logStacktrace("Something broke. Here's what we know: ", thrown);
             }
         }
@@ -182,7 +187,7 @@ public final class PluginLoader {
 
     /**
      * Builds the tree that is used to topsort the dependencies
-     * 
+     *
      * @param knownJars
      * @param loadOrder
      */
@@ -254,8 +259,10 @@ public final class PluginLoader {
     /**
      * The class loader
      * The pluginName should come as full file name with file extension
-     * 
-     * @param pluginName
+     *
+     * @param pluginJar
+     * @param inf
+     *
      * @return
      */
     private final boolean load(String pluginJar, PropertiesFile inf) {
@@ -298,7 +305,8 @@ public final class PluginLoader {
             synchronized (lock) {
                 this.plugins.put(name, plugin);
             }
-        } catch (Throwable ex) {
+        }
+        catch (Throwable ex) {
             Canary.logStacktrace("Exception while loading plugin '" + pluginJar + "'", ex);
             return false;
         }
@@ -326,7 +334,8 @@ public final class PluginLoader {
             inf.setString("jarName", file.getName().replace(".jar", ""));
 
             return load(file.getName(), inf);
-        } catch (Throwable ex) {
+        }
+        catch (Throwable ex) {
             Canary.logStacktrace("Exception while loading plugin", ex);
             return false;
         }
@@ -339,9 +348,10 @@ public final class PluginLoader {
 
     /**
      * Enables the given plugin. Loads the plugin if not loaded (and available)
-     * 
+     *
      * @param name
-     *            the name of the {@link Plugin}
+     *         the name of the {@link Plugin}
+     *
      * @return {@code true} on success, {@code false} on failure
      */
     public final boolean enablePlugin(String name) {
@@ -350,7 +360,7 @@ public final class PluginLoader {
             // Plugin is NIL - lets see if we have it on disk
             plugin = unsafeScanForPlugin(name);
         }
-        return enablePlugin(this.getPlugin(name));
+        return enablePlugin(plugin);
     }
 
     /* Same as public boolean enablePlugin(String name) */
@@ -376,7 +386,8 @@ public final class PluginLoader {
                     enabled = plugin.enable();
                     needNewInstance = false;
                 }
-            } catch (Throwable t) {
+            }
+            catch (Throwable t) {
                 // If the plugin is in development, they may need to know where something failed.
                 Canary.logStacktrace("Could not enable " + plugin.getName(), t);
             }
@@ -393,7 +404,8 @@ public final class PluginLoader {
                     enabled = plugin.enable();
                     plugins.put(plugin.getName(), plugin);
                 }
-            } catch (Throwable t) {
+            }
+            catch (Throwable t) {
                 // If the plugin is in development, they may need to know where something failed.
                 Canary.logStacktrace("Could not enable " + plugin.getName(), t);
             }
@@ -402,6 +414,23 @@ public final class PluginLoader {
         if (enabled) {
             plugin.toggleDisabled();
             Canary.hooks().callHook(new PluginEnableHook(plugin));
+
+            // Check and add plugins to their dependents
+            if (plugin.getCanaryInf().containsKey("dependencies")) {
+                String[] deps = plugin.getCanaryInf().getStringArray("dependencies", "[,;]+");
+                for (String dep : deps) {
+                    plugins.get(dep).addDependent(plugin.getName());
+                }
+            }
+
+            // Check for dependents and re-enable them as well, if this is a new instance this will have no effect here and will be handled in the reload method
+            if (plugin.hasDependents()) {
+                Canary.logInfo(String.format("%s has %d dependents that will now be re-enabled...", plugin.getName(), plugin.getDependents().size()));
+                for (String dependent : plugin.getDependents()) {
+                    enablePlugin(dependent);
+                }
+            }
+
             Canary.logInfo("Enabled " + plugin.getName() + ", Version " + plugin.getVersion());
         }
         else {
@@ -412,17 +441,18 @@ public final class PluginLoader {
             Canary.commands().unregisterCommands(plugin);
             /* Remove Tasks */
             ServerTaskManager.removeTasksForPlugin(plugin);
-
+            /* Remove MOTD Variables */
+            Canary.motd().unregisterMOTDListener(plugin);
         }
-
         return enabled;
     }
 
     /**
      * Tests if all dependencies for the Plugin are present and running
-     * 
+     *
      * @param plugin
-     *            the Plugin to test dependencies for
+     *         the Plugin to test dependencies for
+     *
      * @return {@code true} if passes; {@code false} otherwise
      */
     private final boolean testDependencies(Plugin plugin) {
@@ -453,9 +483,7 @@ public final class PluginLoader {
         return true;
     }
 
-    /**
-     * Enables all plugins, used when starting up the server.
-     */
+    /** Enables all plugins, used when starting up the server. */
     public final void enableAllPlugins() {
         int enabled = 0;
         for (Plugin plugin : plugins.values()) {
@@ -468,9 +496,10 @@ public final class PluginLoader {
 
     /**
      * Disables the given plugin
-     * 
+     *
      * @param name
-     *            the name of the {@link Plugin}
+     *         the name of the {@link Plugin}
+     *
      * @return {@code true} on success, {@code false} on failure
      */
     public final boolean disablePlugin(String name) {
@@ -491,31 +520,37 @@ public final class PluginLoader {
 
         /* Set the plugin as disabled, and send disable message */
         plugin.toggleDisabled();
-        try {
-            plugin.disable();
-        } catch (Throwable t) {
-            Canary.logStacktrace("Error while disabling " + plugin.getName(), t);
-        }
-
         /* Remove Registered Listeners */
         Canary.hooks().unregisterPluginListeners(plugin);
         /* Remove Commands */
         Canary.commands().unregisterCommands(plugin);
         /* Remove Tasks */
         ServerTaskManager.removeTasksForPlugin(plugin);
+        /* Remove MOTD Variables */
+        Canary.motd().unregisterMOTDListener(plugin);
+        try {
+            // Check if the plugin has dependents that need disabled as well
+            if (plugin.hasDependents()) {
+                Canary.logInfo(String.format("%s has %d dependents that will now be disabled...", plugin.getName(), plugin.getDependents().size()));
+                for (String dependent : plugin.getDependents()) {
+                    disablePlugin(dependent);
+                    // DO NOT REMOVE THEM! We need to know the dependents if this is a reload case
+                }
+            }
 
+            plugin.disable(); // Now call disable
+        }
+        catch (Throwable t) {
+            Canary.logStacktrace("Error while disabling " + plugin.getName(), t);
+        }
         Canary.hooks().callHook(new PluginDisableHook(plugin));
         Canary.logInfo("Disabled " + plugin.getName() + ", Version " + plugin.getVersion());
         return true;
     }
 
-    /**
-     * Disables all plugins, used when shutting down the server.
-     */
+    /** Disables all plugins, used when shutting down the server. */
     public final void disableAllPlugins() {
-        ArrayList<Plugin> plugs = new ArrayList<Plugin>(plugins.values());
-        Collections.reverse(plugs); // Reverse order to disable dependents first
-        for (Plugin plugin : plugs) {
+        for (Plugin plugin : this.getPlugins()) {
             disablePlugin(plugin);
         }
     }
@@ -523,8 +558,9 @@ public final class PluginLoader {
     /**
      * Moves a plugins jar file to the disabled/ folder
      * so it won't be loaded with the next server-start/restart
-     * 
+     *
      * @param name
+     *
      * @return
      */
     public final boolean moveToDisabled(String name) {
@@ -536,14 +572,14 @@ public final class PluginLoader {
         plugin.markClosed();
         plugins.remove(name);
         pluginPriorities.setInt(name, -1);
-        plugin = null;
         return true;
     }
 
     /**
      * Reload the specified plugin
-     * 
+     *
      * @param name
+     *
      * @return true on success, false on failure which probably means the plugin is now not enabled nor loaded
      */
     public boolean reloadPlugin(String name) {
@@ -569,14 +605,23 @@ public final class PluginLoader {
         boolean test = load(new File(orgInf.getString("jarPath")));
         if (test) {
             test = enablePlugin(plugin.getName()); // We have a name, not the new instance. Don't pass the plugin directly.
+
+            // Check for dependents and reload them as well
+            if (plugin.hasDependents()) {
+                Canary.logInfo(String.format("%s has %d dependents that will now be reloaded...", plugin.getName(), plugin.getDependents().size()));
+                for (String dependent : plugin.getDependents()) {
+                    reloadPlugin(dependent); // need to reload plugins so the class references are corrected
+                }
+            }
         }
         return test;
     }
 
     /**
      * Get the Plugin with specified name.
-     * 
+     *
      * @param name
+     *
      * @return The plugin for the given name, or null on failure.
      */
     public final Plugin getPlugin(String name) {
@@ -587,7 +632,7 @@ public final class PluginLoader {
 
     /**
      * Gets an unmodifiable collection of currently loaded Plugins
-     * 
+     *
      * @return unmodifiable collection of Plugins
      */
     public final Collection<Plugin> getPlugins() {
@@ -598,7 +643,7 @@ public final class PluginLoader {
 
     /**
      * Get a list of plugin-names
-     * 
+     *
      * @return String array of Plugin names
      */
     public final String[] getPluginList() {
@@ -614,9 +659,9 @@ public final class PluginLoader {
 
     /**
      * Get a list of plugins for shoeing to the player
-     * The format is: pluginname (X) where X is E(nabled) or D(isabled)
-     * 
-     * @return
+     * The format is: (color)pluginname where color is light green for Enabled or light red for disabled
+     *
+     * @return readable list of plugins
      */
     public final String getReadablePluginList() {
         StringBuilder sb = new StringBuilder();
@@ -625,7 +670,8 @@ public final class PluginLoader {
             for (Plugin plugin : plugins.values()) {
                 if (!plugin.isDisabled()) {
                     sb.append(Colors.LIGHT_GREEN).append(plugin.getName()).append(Colors.WHITE).append(", ");
-                } else {
+                }
+                else {
                     sb.append(Colors.LIGHT_RED).append(plugin.getName()).append(Colors.WHITE).append(", ");
                 }
             }
@@ -634,16 +680,17 @@ public final class PluginLoader {
 
         if (str.length() > 1) {
             return str.substring(0, str.length() - 1);
-        } else {
+        }
+        else {
             return null;
         }
     }
 
     /**
-     * Get a list of plugins for shoeing to the player
+     * Get a list of plugins for showing to the player
      * The format is: pluginname (X) where X is E(nabled) or D(isabled)
-     * 
-     * @return
+     *
+     * @return console readable list of plugins
      */
     public final String getReadablePluginListForConsole() {
         StringBuilder sb = new StringBuilder();
@@ -652,7 +699,8 @@ public final class PluginLoader {
             for (Plugin plugin : plugins.values()) {
                 if (!plugin.isDisabled()) {
                     sb.append("(E)").append(plugin.getName()).append(",");
-                } else {
+                }
+                else {
                     sb.append("(D)").append(plugin.getName()).append(",");
                 }
             }
@@ -661,7 +709,8 @@ public final class PluginLoader {
 
         if (str.length() > 1) {
             return str.substring(0, str.length() - 1);
-        } else {
+        }
+        else {
             return null;
         }
     }
@@ -672,7 +721,7 @@ public final class PluginLoader {
 
     /**
      * A node used in solving the dependency tree.
-     * 
+     *
      * @author Jos Kuijpers
      * @author Chris (damagefilter)
      */
@@ -715,14 +764,14 @@ public final class PluginLoader {
         public String toString() {
             StringBuilder sb = new StringBuilder();
 
-            sb.append("<" + this.name + ">(");
+            sb.append("<").append(this.name).append(">(");
             for (DependencyNode node : this.edges) {
-                sb.append(node.toString());
-                sb.append(",");
+                sb.append(node.toString()).append(",");
             }
             int idx = sb.lastIndexOf(",");
-            if (idx != -1)
+            if (idx != -1) {
                 sb.deleteCharAt(idx);
+            }
             sb.append(")");
 
             return sb.toString();

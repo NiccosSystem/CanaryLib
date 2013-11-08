@@ -8,7 +8,7 @@ import net.canarymod.config.Configuration;
 
 /**
  * A Location represents a point in the world including pitch and rotation headings.
- * 
+ *
  * @author Chris (damagefilter)
  */
 public class Location extends Vector3D {
@@ -19,19 +19,19 @@ public class Location extends Vector3D {
 
     /**
      * Constructs a new Location
-     * 
+     *
      * @param world
-     *            the world of the location
+     *         the world of the location
      * @param x
-     *            the x coordinate of the location
+     *         the x coordinate of the location
      * @param y
-     *            the y coordinate of the location
+     *         the y coordinate of the location
      * @param z
-     *            the z coordinate of the location
+     *         the z coordinate of the location
      * @param pitch
-     *            the y-rotation of the location
+     *         the y-rotation of the location
      * @param rotation
-     *            the z-rotation of the location
+     *         the z-rotation of the location
      */
     public Location(World world, double x, double y, double z, float pitch, float rotation) {
         super(x, y, z);
@@ -43,13 +43,13 @@ public class Location extends Vector3D {
 
     /**
      * Constructs a new Location in the default world
-     * 
+     *
      * @param x
-     *            the x coordinate
+     *         the x coordinate
      * @param y
-     *            the y coordinate
+     *         the y coordinate
      * @param z
-     *            the z coordinate
+     *         the z coordinate
      */
     public Location(double x, double y, double z) {
         super(x, y, z);
@@ -60,7 +60,7 @@ public class Location extends Vector3D {
 
     /**
      * Get the rotation around the Y axis
-     * 
+     *
      * @return the rotation
      */
     public float getRotation() {
@@ -69,9 +69,9 @@ public class Location extends Vector3D {
 
     /**
      * Set the rotation around the Y axis
-     * 
+     *
      * @param rotation
-     *            the rotation to set
+     *         the rotation to set
      */
     public void setRotation(float rotation) {
         this.rotation = rotation;
@@ -79,7 +79,7 @@ public class Location extends Vector3D {
 
     /**
      * Get the rotation around the X axis
-     * 
+     *
      * @return the pitch
      */
     public float getPitch() {
@@ -88,9 +88,9 @@ public class Location extends Vector3D {
 
     /**
      * Set the rotation around the X axis
-     * 
+     *
      * @param pitch
-     *            the pitch to set
+     *         the pitch to set
      */
     public void setPitch(float pitch) {
         this.pitch = pitch;
@@ -98,7 +98,7 @@ public class Location extends Vector3D {
 
     /**
      * The dimension ID
-     * 
+     *
      * @return the dimension
      */
     public DimensionType getType() {
@@ -107,29 +107,26 @@ public class Location extends Vector3D {
 
     /**
      * @param dimension
-     *            the dimension to set
+     *         the dimension to set
      */
     public void setType(DimensionType dimension) {
         this.dimension = dimension;
     }
 
-    /**
-     * Check if this object is equal to another one
-     */
+    /** Check if this object is equal to another one */
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof Location)) {
             return false;
-        } else {
+        }
+        else {
             Location l = (Location) other;
 
             return ((l.x == x) && (l.y == y) && (l.z == z) && (l.dimension == dimension) && (l.pitch == pitch) && (l.rotation == rotation) && (l.world.equals(world)));
         }
     }
 
-    /**
-     * Return a hashcode for this object
-     */
+    /** Return a hashcode for this object */
     @Override
     public int hashCode() {
         int hash = 5;
@@ -142,16 +139,14 @@ public class Location extends Vector3D {
         return hash;
     }
 
-    /**
-     * @return the world
-     */
+    /** @return the world */
     public String getWorldName() {
         return world;
     }
 
     /**
      * @param world
-     *            the world to set
+     *         the world to set
      */
     public void setWorldName(String world) {
         this.world = world;
@@ -159,7 +154,7 @@ public class Location extends Vector3D {
 
     /**
      * Returns the actual world this location belongs to
-     * 
+     *
      * @return the location's world
      */
     public World getWorld() {
@@ -179,12 +174,14 @@ public class Location extends Vector3D {
 
     /**
      * Turn a String Location that has been formatted by Location.toString() (or has a compatible format) into a Location object
-     * 
+     *
      * @param fields
-     *            the string of the fields
+     *         the string of the fields
+     *
      * @return deserialized Location
+     *
      * @throws CanaryDeserializeException
-     *             if the String does not contain enough information or incorrect information
+     *         if the String does not contain enough information or incorrect information
      */
     public static Location fromString(String fields) throws CanaryDeserializeException {
         Location loc = new Location(0, 0, 0);
@@ -202,7 +199,8 @@ public class Location extends Vector3D {
             loc.setType(DimensionType.fromId(Integer.parseInt(split[5])));
             loc.setWorldName(split[6]);
             return loc;
-        } catch (NumberFormatException e) {
+        }
+        catch (NumberFormatException e) {
             throw new CanaryDeserializeException("Failed to deserialize Location: " + e.getMessage(), "CanaryMod");
         }
     }

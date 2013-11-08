@@ -4,8 +4,14 @@ import net.canarymod.Canary;
 import net.canarymod.Translator;
 import net.canarymod.chat.Colors;
 import net.canarymod.chat.MessageReceiver;
+import net.canarymod.commandsys.NativeCommand;
 
-public class WhitelistCommand {
+/**
+ * Command to add or remove a player from the whitelist  
+ *
+ * @author Chris (damagefilter)
+ */
+public class WhitelistCommand implements NativeCommand {
 
     public void execute(MessageReceiver caller, String[] args) {
         if (args[1].equalsIgnoreCase("add")) {

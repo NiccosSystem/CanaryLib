@@ -6,12 +6,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
 import net.canarymod.Canary;
 import net.canarymod.ToolBox;
 import net.canarymod.database.exceptions.DatabaseAccessException;
 import net.canarymod.database.exceptions.DatabaseTableInconsistencyException;
 import net.canarymod.database.exceptions.DatabaseWriteException;
 
+/**
+ * Handle the layout and creation of tables
+ *
+ * @author Chris (damagefilter)
+ */
 public abstract class DataAccess {
 
     protected String tableName;
@@ -25,9 +31,9 @@ public abstract class DataAccess {
      * You need to get data from Database and load it. CanaryMod will do this for you.
      * For this simply call Canary.db().load(yourDataAccess, String[]lookupFields, Object[]whereData);
      * This will fill your AccessObject.
-     * 
+     *
      * @param tableName
-     *            The table name
+     *         The table name
      */
     public DataAccess(String tableName) {
         this.tableName = tableName;
@@ -46,16 +52,20 @@ public abstract class DataAccess {
 
     /**
      * Load a Data set into this DataAccess object
-     * 
-     * @param tableName
+     *
+     * @param dataSet
+     *         the data set to be loaded
+     *
      * @throws DatabaseAccessException
      */
     public final void load(HashMap<String, Object> dataSet) throws DatabaseAccessException {
         try {
             applyDataSet(dataSet);
-        } catch (IllegalAccessException e) {
+        }
+        catch (IllegalAccessException e) {
             throw new DatabaseAccessException(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             throw new DatabaseAccessException(e.getMessage());
         }
         if (dataSet.size() > 0) {
@@ -67,9 +77,11 @@ public abstract class DataAccess {
     /**
      * Creates a HashMap containing all relevant fields for the database, which will then
      * be saved into the database along with their values
-     * 
-     * @return
+     *
+     * @return HashMap that maps the Column meta data to the data present in database.
+     *
      * @throws DatabaseTableInconsistencyException
+     *
      */
     public final HashMap<Column, Object> toDatabaseEntryList() throws DatabaseTableInconsistencyException {
         List<Field> fields = Arrays.asList(ToolBox.safeArrayMerge(getClass().getFields(), getClass().getDeclaredFields(), new Field[1]));
@@ -89,9 +101,11 @@ public abstract class DataAccess {
             }
             try {
                 fieldMap.put(colInfo, field.get(this));
-            } catch (IllegalArgumentException e) {
+            }
+            catch (IllegalArgumentException e) {
                 Canary.logStacktrace(e.getMessage(), e);
-            } catch (IllegalAccessException e) {
+            }
+            catch (IllegalAccessException e) {
                 isInconsistent = true;
                 throw new DatabaseTableInconsistencyException("Could not access an annotated column field: " + field.getName());
             }
@@ -127,9 +141,11 @@ public abstract class DataAccess {
 
     /**
      * Gets the table layout. That is: all column annotations in this class that make up the table
-     * 
-     * @return
+     *
+     * @return a HashSet containing all Columns as defined in this {@link DataAccess} object
+     *
      * @throws DatabaseTableInconsistencyException
+     *
      */
     public final HashSet<Column> getTableLayout() throws DatabaseTableInconsistencyException {
         Field[] fields = ToolBox.safeArrayMerge(getClass().getFields(), getClass().getDeclaredFields(), new Field[1]);
@@ -157,8 +173,8 @@ public abstract class DataAccess {
 
     /**
      * This shall return the name of the Table this DataAccess belongs to
-     * 
-     * @return
+     *
+     * @return the table name
      */
     public final String getName() {
         return tableName;
@@ -169,8 +185,8 @@ public abstract class DataAccess {
      * Inconsistent DataAccess objects will not be saved into the database.
      * This is probably rarely going to be true but it's an extra security measure
      * to keep the data safe and consistent
-     * 
-     * @return
+     *
+     * @return true if this object is inconsistent to the database schema, false otherwise
      */
     public final boolean isInconsistent() {
         return isInconsistent;
@@ -178,8 +194,8 @@ public abstract class DataAccess {
 
     /**
      * Check if this DataAccess has been loaded properly
-     * 
-     * @return
+     *
+     * @return true if a load has been attempted for this {@link DataAccess}
      */
     public final boolean isLoaded() {
         return isLoaded;
@@ -189,20 +205,42 @@ public abstract class DataAccess {
      * Check if there is data in this DataAccess object.
      * This will also return false if there was an exception while
      * the data has been loaded
-     * 
-     * @return
+     *
+     * @return true if this {@link DataAccess} contains data
      */
     public final boolean hasData() {
         return hasData;
     }
 
     /**
-     * Makes sure the database file for this DataAccess exists before anything starts to use it
+     * Checks if this {@link DataAccess} has a Column with the given name.
+     *
+     * @param name
+     *         the name to check for
+     *
+     * @return true if DataAccess has this column, false otherwise
      */
+    public final boolean hasColumn(String name) {
+        try {
+            for (Column col : getTableLayout()) {
+                if (col.columnName().equals(name)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        catch (DatabaseTableInconsistencyException e) {
+            Canary.logSevere("Could not finish column name lookup in database for " + tableName, e);
+            return false;
+        }
+    }
+
+    /** Makes sure the database file for this DataAccess exists before anything starts to use it */
     private void createTable() {
         try {
             Database.get().updateSchema(this);
-        } catch (DatabaseWriteException e) {
+        }
+        catch (DatabaseWriteException e) {
             Canary.logStacktrace(e.getMessage(), e);
         }
     }
@@ -210,8 +248,8 @@ public abstract class DataAccess {
     /**
      * Converts this DataAccess object into a string representation.<br>
      * Format: Table : tableName { [`columnName`,'fieldName'] }
-     * 
-     * @return
+     *
+     * @return string representation
      */
     @Override
     public String toString() {
@@ -219,19 +257,22 @@ public abstract class DataAccess {
         Map<Column, Object> columns = null;
         try {
             columns = this.toDatabaseEntryList();
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
 
         }
-        for (Column column : columns.keySet()) {
-            sb.append("[`").append(column.columnName()).append("`, '").append(columns.get(column)).append("'] ");
+        if (columns != null) {
+            for (Column column : columns.keySet()) {
+                sb.append("[`").append(column.columnName()).append("`, '").append(columns.get(column)).append("'] ");
+            }
         }
         return "Table : " + this.tableName + " { " + sb.toString() + "}";
     }
 
     /**
      * Returns an empty instance of this {@link DataAccess} object
-     * 
-     * @return
+     *
+     * @return instance
      */
     public abstract DataAccess getInstance();
 }

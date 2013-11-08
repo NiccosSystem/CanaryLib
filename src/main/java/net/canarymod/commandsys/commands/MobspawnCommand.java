@@ -3,28 +3,31 @@ package net.canarymod.commandsys.commands;
 import net.canarymod.Canary;
 import net.canarymod.LineTracer;
 import net.canarymod.Translator;
-import net.canarymod.api.Server;
 import net.canarymod.api.entity.Entity;
 import net.canarymod.api.entity.EntityType;
 import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.api.world.blocks.Block;
 import net.canarymod.chat.Colors;
 import net.canarymod.chat.MessageReceiver;
-import net.canarymod.commandsys.CommandException;
+import net.canarymod.commandsys.NativeCommand;
 
-public class MobspawnCommand {
+/**
+ * Command to spawn mob(s) and their rider(s)
+ *
+ * @author Chris (damagefilter)
+ */
+public class MobspawnCommand implements NativeCommand {
 
     public void execute(MessageReceiver caller, String[] parameters) {
-        if (caller instanceof Server) {
-            console((Server) caller, parameters);
-        } else if (caller instanceof Player) {
+        if (caller instanceof Player) {
             player((Player) caller, parameters);
-        } else {
-            throw new CommandException("Unknown MessageReceiver: " + caller.getClass().getSimpleName());
+        }
+        else {
+            console(caller);
         }
     }
 
-    private void console(Server caller, String[] args) {
+    private void console(MessageReceiver caller) {
         caller.notice(Translator.translate("mobspawn console"));
     }
 
@@ -39,10 +42,12 @@ public class MobspawnCommand {
                     Entity mob = Canary.factory().getEntityFactory().newEntity(EntityType.valueOf(args[1].toUpperCase()), b.getLocation());
                     if (mob.spawn()) {
                         player.message(Colors.YELLOW + Translator.translateAndFormat("mobspawn spawned", args[1]));
-                    } else {
+                    }
+                    else {
                         player.notice("mobspawn failed");
                     }
-                } catch (IllegalArgumentException e) {
+                }
+                catch (IllegalArgumentException e) {
                     player.notice("mobspawn failed");
                 }
             }
@@ -58,7 +63,7 @@ public class MobspawnCommand {
                 LineTracer tracer = new LineTracer(player);
                 Block b = tracer.getTargetBlock();
                 if (b == null) {
-                    player.notice("mobspawn failed");
+                    player.notice(Translator.translate("mobspawn failed"));
                     return;
                 }
                 b.setY(b.getY() + 1);
@@ -66,9 +71,10 @@ public class MobspawnCommand {
                 for (int i = 0; i < amount; ++i) {
                     try {
                         Entity e = Canary.factory().getEntityFactory().newEntity(EntityType.valueOf(args[1].toUpperCase()), b.getLocation());
-                        e.spawn();
-                    } catch (IllegalArgumentException e) {
-                        player.notice("mobspawn failed");
+                        spawnSuccess &= e.spawn();
+                    }
+                    catch (IllegalArgumentException e) {
+                        player.notice(Translator.translate("mobspawn failed"));
                     }
                 }
                 if (spawnSuccess) {
@@ -82,7 +88,7 @@ public class MobspawnCommand {
                 LineTracer tracer = new LineTracer(player);
                 Block b = tracer.getTargetBlock();
                 if (b == null) {
-                    player.notice("mobspawn failed");
+                    player.notice(Translator.translate("mobspawn failed"));
                     return;
                 }
                 b.setY(b.getY() + 1);
@@ -92,8 +98,9 @@ public class MobspawnCommand {
                     Entity rider = Canary.factory().getEntityFactory().newEntity(EntityType.valueOf(args[2].toUpperCase()));
                     mob.spawn(rider);
                     player.message(Colors.YELLOW + Translator.translateAndFormat("mobspawn spawned rider", args[1], args[2]));
-                } catch (IllegalArgumentException e) {
-                    player.notice("mobspawn failed");
+                }
+                catch (IllegalArgumentException e) {
+                    player.notice(Translator.translate("mobspawn failed"));
                 }
             }
         }
@@ -108,7 +115,7 @@ public class MobspawnCommand {
             LineTracer tracer = new LineTracer(player);
             Block b = tracer.getTargetBlock();
             if (b == null) {
-                player.notice("mobspawn failed");
+                player.notice(Translator.translate("mobspawn failed"));
                 return;
             }
             b.setY(b.getY() + 1);
@@ -118,9 +125,10 @@ public class MobspawnCommand {
                 try {
                     Entity mob = Canary.factory().getEntityFactory().newEntity(EntityType.valueOf(args[1].toUpperCase()), b.getLocation());
                     Entity rider = Canary.factory().getEntityFactory().newEntity(EntityType.valueOf(args[2].toUpperCase()));
-                    mob.spawn(rider);
-                } catch (IllegalArgumentException e) {
-                    player.notice("mobspawn failed");
+                    spawnSuccess &= mob.spawn(rider);
+                }
+                catch (IllegalArgumentException e) {
+                    player.notice(Translator.translate("mobspawn failed"));
                 }
             }
             if (spawnSuccess) {

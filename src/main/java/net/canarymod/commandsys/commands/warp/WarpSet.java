@@ -7,10 +7,16 @@ import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.api.world.blocks.CommandBlock;
 import net.canarymod.chat.Colors;
 import net.canarymod.chat.MessageReceiver;
+import net.canarymod.commandsys.NativeCommand;
 import net.canarymod.user.Group;
 import net.canarymod.warp.Warp;
 
-public class WarpSet {
+/**
+ * Command to set a warp (including private and group warps)
+ *
+ * @author Chris (damagefilter)
+ */
+public class WarpSet implements NativeCommand {
     public void execute(MessageReceiver caller, String[] args) {
         if (caller instanceof Server || caller instanceof CommandBlock) {
             caller.notice(Translator.translate("setwarp console"));
@@ -27,7 +33,6 @@ public class WarpSet {
 
                 Canary.warps().addWarp(newWarp);
                 player.message(Colors.YELLOW + Translator.translateAndFormat("setwarp success", args[1]));
-                return;
             }
             else if (args.length > 3) {
                 // SET GROUP SPECIFIC WARP
@@ -49,16 +54,13 @@ public class WarpSet {
 
                     Canary.warps().addWarp(newWarp);
                     player.message(Colors.YELLOW + Translator.translateAndFormat("setwarp success private", args[1]));
-                    return;
                 }
                 else {
                     Canary.help().getHelp(player, "setwarp");
-                    return;
                 }
             }
             else {
                 Canary.help().getHelp(player, "setwarp");
-                return;
             }
         }
     }

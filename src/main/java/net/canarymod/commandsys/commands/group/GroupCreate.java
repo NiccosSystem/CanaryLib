@@ -6,9 +6,15 @@ import net.canarymod.Translator;
 import net.canarymod.api.world.World;
 import net.canarymod.chat.Colors;
 import net.canarymod.chat.MessageReceiver;
+import net.canarymod.commandsys.NativeCommand;
 import net.canarymod.user.Group;
 
-public class GroupCreate {
+/**
+ * Command to create a group   
+ *
+ * @author Chris (damagefilter)
+ */
+public class GroupCreate implements NativeCommand {
     // group) add <name> [[parent] [world[:dimension]]]
     public void execute(MessageReceiver caller, String[] args) {
         if (args[args.length - 1].equals("--help")) {
@@ -51,11 +57,13 @@ public class GroupCreate {
             if (world == null) {
                 caller.notice(Translator.translateAndFormat("group unknown world", args[3]));
                 return;
-            } else {
+            }
+            else {
                 worldName = world.getFqName();
             }
             String groupworld = parent.getWorldName();
-            if (!(groupworld == null && worldName == null) || !(groupworld != null && groupworld.equals(worldName))) {
+            if (worldName != null && !(groupworld != null && groupworld.equals(worldName))) {
+                //Cannot add a parent from another world
                 caller.notice(Translator.translateAndFormat("group parent world mismatch", parent.getName(), parent.getWorldName(), worldName));
                 return;
             }

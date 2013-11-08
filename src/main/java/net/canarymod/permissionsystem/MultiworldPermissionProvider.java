@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
+
 import net.canarymod.Canary;
 import net.canarymod.Translator;
 import net.canarymod.backbone.PermissionDataAccess;
@@ -16,7 +17,7 @@ import net.canarymod.database.exceptions.DatabaseReadException;
 /**
  * A PermissionProvider implementation based on PermissionNode objects,
  * with multiworld support
- * 
+ *
  * @author Chris (damagefilter)
  */
 public class MultiworldPermissionProvider implements PermissionProvider {
@@ -29,7 +30,7 @@ public class MultiworldPermissionProvider implements PermissionProvider {
 
     /**
      * Constructs a new PermissionProvider that's valid for the given world
-     * 
+     *
      * @param world
      */
     public MultiworldPermissionProvider(String world, boolean isPlayer, String owner) {
@@ -51,7 +52,7 @@ public class MultiworldPermissionProvider implements PermissionProvider {
     /**
      * Add a given permission to the permissions cache. The cache is limited and
      * will prune itself if it gets too big.
-     * 
+     *
      * @param path
      * @param value
      */
@@ -64,13 +65,14 @@ public class MultiworldPermissionProvider implements PermissionProvider {
                 it.remove();
             }
         }
-        permissionCache.put(path, Boolean.valueOf(value));
+        permissionCache.put(path, value);
     }
 
     /**
      * Check the permission cache if we have something already
-     * 
+     *
      * @param permission
+     *
      * @return
      */
     private Boolean checkCached(String permission) {
@@ -90,8 +92,9 @@ public class MultiworldPermissionProvider implements PermissionProvider {
 
     /**
      * get a node that must be directly in the permissions list
-     * 
+     *
      * @param name
+     *
      * @return
      */
     private PermissionNode getRootNode(String name) {
@@ -105,9 +108,10 @@ public class MultiworldPermissionProvider implements PermissionProvider {
 
     /**
      * Resolve a path when adding new stuff
-     * 
+     *
      * @param path
      * @param value
+     *
      * @return
      */
     private PermissionNode addPath(String[] path, boolean value) {
@@ -150,14 +154,13 @@ public class MultiworldPermissionProvider implements PermissionProvider {
 
     /**
      * Resolve the string path and return the result
-     * 
+     *
      * @param path
+     *
      * @return
      */
     private boolean resolvePath(String[] path) {
-        PermissionNode node = null;
-
-        node = getRootNode(path[0]);
+        PermissionNode node = getRootNode(path[0]);
         boolean hasAsterisk = false, asteriskValue = false;
 
         for (int current = 0; current < path.length; current++) {
@@ -201,14 +204,13 @@ public class MultiworldPermissionProvider implements PermissionProvider {
 
     /**
      * Checks if this permission provider actually has the given path loaded.
-     * 
+     *
      * @param path
+     *
      * @return
      */
     private boolean hasPath(String[] path) {
-        PermissionNode node = null;
-
-        node = getRootNode(path[0]);
+        PermissionNode node = getRootNode(path[0]);
 
         for (int current = 0; current < path.length; current++) {
             if (current == 0) {
@@ -257,22 +259,24 @@ public class MultiworldPermissionProvider implements PermissionProvider {
             return true;
         }
         Boolean b = checkCached(permission);
-
         if (b != null) {
-            return b.booleanValue();
+            return b;
+        }
+        String[] path = permission.split("\\.");
+        if (!this.hasPath(path)) {
+            if (parent != null) {
+                return parent.queryPermission(permission);
+            }
         }
         boolean result = resolvePath(permission.split("\\."));
-        addPermissionToCache(permission, Boolean.valueOf(result));
+        addPermissionToCache(permission, result);
 
         return result;
     }
 
     @Override
     public boolean pathExists(String permission) {
-        if (permission.isEmpty() || permission.equals(" ")) {
-            return true;
-        }
-        return hasPath(permission.split("\\."));
+        return permission.trim().isEmpty() || hasPath(permission.split("\\."));
     }
 
     @Override
@@ -286,11 +290,11 @@ public class MultiworldPermissionProvider implements PermissionProvider {
         permissionCache.clear();
         if (isPlayerProvider) {
             PermissionProvider p = Canary.permissionManager().getPlayerProvider(owner, world);
-            permissions = (ArrayList<PermissionNode>) p.getPermissionMap();
+            permissions = p.getPermissionMap();
         }
         else {
             PermissionProvider p = Canary.permissionManager().getGroupsProvider(owner, world);
-            permissions = (ArrayList<PermissionNode>) p.getPermissionMap();
+            permissions = p.getPermissionMap();
         }
     }
 
@@ -325,7 +329,8 @@ public class MultiworldPermissionProvider implements PermissionProvider {
         ArrayList<DataAccess> list = new ArrayList<DataAccess>();
         try {
             Database.get().loadAll(data, list, new String[]{ "owner", "type" }, new Object[]{ this.owner, isPlayerProvider ? "player" : "group" });
-        } catch (DatabaseReadException e) {
+        }
+        catch (DatabaseReadException e) {
             caller.notice(Translator.translate("no permissions"));
         }
         if (list.size() > 0) {

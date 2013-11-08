@@ -2,29 +2,29 @@ package net.canarymod.commandsys.commands;
 
 import net.canarymod.Canary;
 import net.canarymod.Translator;
-import net.canarymod.api.Server;
 import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.chat.MessageReceiver;
-import net.canarymod.commandsys.CommandException;
+import net.canarymod.commandsys.NativeCommand;
 
-/**
- * @author Somners
- */
-public class GodCommand {
+/** @author Somners */
+public class GodCommand implements NativeCommand {
 
     public void execute(MessageReceiver caller, String[] parameters) {
-        if (caller instanceof Server) {
-            console(caller, parameters);
-        } else if (caller instanceof Player) {
+        if (caller instanceof Player) {
             player((Player) caller, parameters);
-        } else {
-            throw new CommandException("Unknown MessageReceiver: " + caller.getClass().getSimpleName());
+        }
+        else {
+            console(caller, parameters);
         }
     }
 
     private void console(MessageReceiver caller, String[] args) {
         if (args.length != 2) {
-            Canary.help().getHelp(caller, "give");
+            Canary.help().getHelp(caller, "god");
+            return;
+        }
+        if (!caller.hasPermission("canary.command.god.other")) {
+            caller.notice(Translator.translate("god failed"));
             return;
         }
         Player other = Canary.getServer().getPlayer(args[1]);
@@ -36,7 +36,8 @@ public class GodCommand {
             other.getCapabilities().setInvulnerable(false);
             caller.notice(Translator.translateAndFormat("god disabled other", other.getName()));
             other.notice(Translator.translate("god disabled"));
-        } else {
+        }
+        else {
             other.getCapabilities().setInvulnerable(true);
             caller.notice(Translator.translateAndFormat("god enabled other", other.getName()));
             other.notice(Translator.translate("god enabled"));
@@ -54,7 +55,8 @@ public class GodCommand {
             if (player.getCapabilities().isInvulnerable()) {
                 player.getCapabilities().setInvulnerable(false);
                 player.notice(Translator.translate("god disabled"));
-            } else {
+            }
+            else {
                 player.getCapabilities().setInvulnerable(true);
                 player.notice(Translator.translate("god enabled"));
             }
@@ -65,7 +67,7 @@ public class GodCommand {
                 player.notice(Translator.translate("god failed"));
                 return;
             }
-            Player other = Canary.getServer().getPlayer(args[1]);
+            Player other = Canary.getServer().matchPlayer(args[1]);
             if (other == null) {
                 player.notice(Translator.translate("god failed") + " " + Translator.translateAndFormat("unknown player", args[1]));
                 return;
@@ -74,12 +76,14 @@ public class GodCommand {
                 other.getCapabilities().setInvulnerable(false);
                 player.notice(Translator.translateAndFormat("god disabled other", other.getName()));
                 other.notice(Translator.translate("god disabled"));
-            } else {
+            }
+            else {
                 other.getCapabilities().setInvulnerable(true);
                 player.notice(Translator.translateAndFormat("god enabled other", other.getName()));
                 other.notice(Translator.translate("god enabled"));
             }
-        } else {
+        }
+        else {
             player.notice(Translator.translate("god failed") + " " + Translator.translate("usage"));
             Canary.help().getHelp(player, "god");
         }

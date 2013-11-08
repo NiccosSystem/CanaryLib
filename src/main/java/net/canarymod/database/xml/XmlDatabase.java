@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+
 import net.canarymod.database.Column;
 import net.canarymod.database.Column.DataType;
 import net.canarymod.database.DataAccess;
@@ -18,6 +19,7 @@ import net.canarymod.database.exceptions.DatabaseAccessException;
 import net.canarymod.database.exceptions.DatabaseReadException;
 import net.canarymod.database.exceptions.DatabaseTableInconsistencyException;
 import net.canarymod.database.exceptions.DatabaseWriteException;
+
 import org.jdom2.Content;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -26,6 +28,11 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
+/**
+ * Represent access to an XML database
+ *
+ * @author Chris (damagefilter)
+ */
 public class XmlDatabase extends Database {
 
     private XmlDatabase() {
@@ -58,22 +65,26 @@ public class XmlDatabase extends Database {
             try {
                 file.createNewFile();
                 initFile(file, data.getName());
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new DatabaseWriteException(e.getMessage());
             }
         }
-        Document dbTable = null;
+        Document dbTable;
 
         try {
             FileInputStream in = new FileInputStream(file);
             dbTable = fileBuilder.build(in);
             in.close();
             insertData(file, data, dbTable);
-        } catch (JDOMException e) {
+        }
+        catch (JDOMException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
-        } catch (DatabaseTableInconsistencyException e) {
+        }
+        catch (DatabaseTableInconsistencyException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
         }
     }
@@ -94,13 +105,14 @@ public class XmlDatabase extends Database {
             in.close();
 
             loadData(data, table, fieldNames, fieldValues);
-        } catch (JDOMException e) {
+        }
+        catch (JDOMException e) {
             throw new DatabaseReadException(e.getMessage(), e);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new DatabaseReadException(e.getMessage(), e);
-        } catch (DatabaseTableInconsistencyException e) {
-            throw new DatabaseReadException(e.getMessage(), e);
-        } catch (DatabaseAccessException e) {
+        }
+        catch (DatabaseAccessException e) {
             throw new DatabaseReadException(e.getMessage(), e);
         }
     }
@@ -121,17 +133,14 @@ public class XmlDatabase extends Database {
             in.close();
 
             loadAllData(typeTemplate, datasets, table, fieldNames, fieldValues);
-        } catch (JDOMException e) {
+        }
+        catch (JDOMException e) {
             throw new DatabaseReadException(e.getMessage(), e);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new DatabaseReadException(e.getMessage(), e);
-        } catch (DatabaseTableInconsistencyException e) {
-            throw new DatabaseReadException(e.getMessage(), e);
-        } catch (DatabaseAccessException e) {
-            throw new DatabaseReadException(e.getMessage(), e);
-        } catch (InstantiationException e) {
-            throw new DatabaseReadException(e.getMessage(), e);
-        } catch (IllegalAccessException e) {
+        }
+        catch (DatabaseAccessException e) {
             throw new DatabaseReadException(e.getMessage(), e);
         }
 
@@ -153,11 +162,14 @@ public class XmlDatabase extends Database {
             in.close();
 
             updateData(file, table, data, fieldNames, fieldValues);
-        } catch (JDOMException e) {
+        }
+        catch (JDOMException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
-        } catch (DatabaseTableInconsistencyException e) {
+        }
+        catch (DatabaseTableInconsistencyException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
         }
     }
@@ -178,11 +190,11 @@ public class XmlDatabase extends Database {
             in.close();
 
             removeData(file, table, fieldNames, fieldValues);
-        } catch (JDOMException e) {
+        }
+        catch (JDOMException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
-        } catch (IOException e) {
-            throw new DatabaseWriteException(e.getMessage(), e);
-        } catch (DatabaseTableInconsistencyException e) {
+        }
+        catch (IOException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
         }
     }
@@ -195,7 +207,8 @@ public class XmlDatabase extends Database {
             try {
                 file.createNewFile();
                 initFile(file, data.getName());
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new DatabaseWriteException(e.getMessage(), e);
             }
         }
@@ -211,11 +224,14 @@ public class XmlDatabase extends Database {
                 removeFields(element, tableLayout);
             }
             write(file.getPath(), table);
-        } catch (JDOMException e) {
+        }
+        catch (JDOMException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
-        } catch (DatabaseTableInconsistencyException e) {
+        }
+        catch (DatabaseTableInconsistencyException e) {
             throw new DatabaseWriteException(e.getMessage(), e);
         }
     }
@@ -229,7 +245,7 @@ public class XmlDatabase extends Database {
 
     /**
      * Adds new fields to the Element, according to the given layout set.
-     * 
+     *
      * @param element
      * @param layout
      */
@@ -256,7 +272,7 @@ public class XmlDatabase extends Database {
 
     /**
      * Removes fields from the given element that are not contained in the given layout
-     * 
+     *
      * @param element
      * @param layout
      */
@@ -278,12 +294,14 @@ public class XmlDatabase extends Database {
     /**
      * Inserts data into the XML file. This does NOT update data.
      * It will create a new entry if there isn't the exact same already present
-     * 
+     *
      * @param file
      * @param data
      * @param dbTable
+     *
      * @throws IOException
      * @throws DatabaseTableInconsistencyException
+     *
      */
     private void insertData(File file, DataAccess data, Document dbTable) throws IOException, DatabaseTableInconsistencyException {
         HashMap<Column, Object> entry = data.toDatabaseEntryList();
@@ -312,7 +330,8 @@ public class XmlDatabase extends Database {
                     foundDupe = true;
                 }
             }
-            if (!foundDupe) {}
+            if (!foundDupe) {
+            }
         }
         dbTable.getRootElement().addContent(set);
         write(file.getPath(), dbTable);
@@ -321,13 +340,15 @@ public class XmlDatabase extends Database {
     /**
      * Updates an already existing element in the document.
      * IMPORTANT: the lengths of fields and content array must have been checked before this method is called!
-     * 
+     *
      * @param file
      * @param table
      * @param fields
      * @param values
+     *
      * @throws IOException
      * @throws DatabaseTableInconsistencyException
+     *
      * @throws DatabaseWriteException
      */
     private void updateData(File file, Document table, DataAccess data, String[] fields, Object[] values) throws IOException, DatabaseTableInconsistencyException, DatabaseWriteException {
@@ -378,7 +399,7 @@ public class XmlDatabase extends Database {
         }
     }
 
-    private void removeData(File file, Document table, String[] fields, Object[] values) throws IOException, DatabaseTableInconsistencyException {
+    private void removeData(File file, Document table, String[] fields, Object[] values) throws IOException {
         ArrayList<Element> toremove = new ArrayList<Element>();
         for (Element element : table.getRootElement().getChildren()) {
             int equalFields = 0;
@@ -404,7 +425,7 @@ public class XmlDatabase extends Database {
         write(file.getPath(), table);
     }
 
-    private void loadData(DataAccess data, Document table, String[] fields, Object[] values) throws IOException, DatabaseTableInconsistencyException, DatabaseAccessException {
+    private void loadData(DataAccess data, Document table, String[] fields, Object[] values) throws DatabaseAccessException {
         for (Element element : table.getRootElement().getChildren()) {
             int equalFields = 0;
 
@@ -430,7 +451,7 @@ public class XmlDatabase extends Database {
         }
     }
 
-    private void loadAllData(DataAccess template, List<DataAccess> datasets, Document table, String[] fields, Object[] values) throws IOException, DatabaseTableInconsistencyException, DatabaseAccessException, InstantiationException, IllegalAccessException {
+    private void loadAllData(DataAccess template, List<DataAccess> datasets, Document table, String[] fields, Object[] values) throws DatabaseAccessException {
         for (Element element : table.getRootElement().getChildren()) {
             int equalFields = 0;
 
@@ -465,9 +486,10 @@ public class XmlDatabase extends Database {
      * First they must be of type Element and then the fields are checked against each other.
      * If the number of equal fields does not match the number of child elements ot Content a,
      * this method will return false, true otherwise
-     * 
+     *
      * @param a
      * @param b
+     *
      * @return
      */
     private boolean elementEquals(Content a, Content b) {
@@ -503,15 +525,18 @@ public class XmlDatabase extends Database {
 
     /**
      * Generates the next auto-increment ID for this table
-     * 
+     *
      * @param doc
      * @param col
+     *
      * @return
+     *
      * @throws DatabaseTableInconsistencyException
+     *
      */
     private int getIncrementId(Document doc, Column col) throws DatabaseTableInconsistencyException {
         // Search from last to first content entry for a valid element
-        int id = 0;
+        int id;
         int index = doc.getRootElement().getChildren().size() - 1;
 
         if (index < 0) {
@@ -527,18 +552,20 @@ public class XmlDatabase extends Database {
                 id = Integer.valueOf(num);
                 id++;
                 return id;
-            } else {
+            }
+            else {
                 // That means there is no data;
                 return 1;
             }
-        } catch (NumberFormatException e) {
+        }
+        catch (NumberFormatException e) {
             throw new DatabaseTableInconsistencyException(col.columnName() + "is not an incrementable field. Fix your DataAccess!");
         }
     }
 
     /**
      * Add data to a data set from the given xml element and type
-     * 
+     *
      * @param child
      * @param dataSet
      * @param type
@@ -553,7 +580,8 @@ public class XmlDatabase extends Database {
                         byteList.add(Byte.parseByte(el.getText()));
                     }
                     dataSet.put(child.getName(), byteList);
-                } else {
+                }
+                else {
                     dataSet.put(child.getName(), Byte.parseByte(child.getText()));
                 }
                 break;
@@ -566,7 +594,8 @@ public class XmlDatabase extends Database {
                         byteList.add(Double.parseDouble(el.getText()));
                     }
                     dataSet.put(child.getName(), byteList);
-                } else {
+                }
+                else {
                     dataSet.put(child.getName(), Double.parseDouble(child.getText()));
                 }
                 break;
@@ -579,7 +608,8 @@ public class XmlDatabase extends Database {
                         byteList.add(Float.parseFloat(el.getText()));
                     }
                     dataSet.put(child.getName(), byteList);
-                } else {
+                }
+                else {
                     dataSet.put(child.getName(), Float.parseFloat(child.getText()));
                 }
                 break;
@@ -592,7 +622,8 @@ public class XmlDatabase extends Database {
                         byteList.add(Integer.parseInt(el.getText()));
                     }
                     dataSet.put(child.getName(), byteList);
-                } else {
+                }
+                else {
                     dataSet.put(child.getName(), Integer.parseInt(child.getText()));
                 }
                 break;
@@ -605,7 +636,8 @@ public class XmlDatabase extends Database {
                         byteList.add(Long.parseLong(el.getText()));
                     }
                     dataSet.put(child.getName(), byteList);
-                } else {
+                }
+                else {
                     dataSet.put(child.getName(), Long.parseLong(child.getText()));
                 }
                 break;
@@ -618,7 +650,8 @@ public class XmlDatabase extends Database {
                         byteList.add(Short.parseShort(el.getText()));
                     }
                     dataSet.put(child.getName(), byteList);
-                } else {
+                }
+                else {
                     dataSet.put(child.getName(), Short.parseShort(child.getText()));
                 }
                 break;
@@ -631,7 +664,8 @@ public class XmlDatabase extends Database {
                         byteList.add(el.getText());
                     }
                     dataSet.put(child.getName(), byteList);
-                } else {
+                }
+                else {
                     dataSet.put(child.getName(), child.getText());
                 }
                 break;
@@ -644,7 +678,8 @@ public class XmlDatabase extends Database {
                         byteList.add(Boolean.valueOf(el.getText()));
                     }
                     dataSet.put(child.getName(), byteList);
-                } else {
+                }
+                else {
                     dataSet.put(child.getName(), Boolean.valueOf(child.getText()));
                 }
                 break;
@@ -656,10 +691,12 @@ public class XmlDatabase extends Database {
 
     /**
      * Adds data to an element
-     * 
+     *
      * @param element
      * @param obj
+     *
      * @throws DatabaseTableInconsistencyException
+     *
      */
     private void addToElement(Document doc, Element element, Object obj, Column col) throws DatabaseTableInconsistencyException {
         if (col.autoIncrement()) {

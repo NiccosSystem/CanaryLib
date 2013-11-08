@@ -1,12 +1,12 @@
 package net.canarymod.commandsys;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+
 import net.canarymod.Canary;
 import net.canarymod.Translator;
 import net.canarymod.chat.MessageReceiver;
@@ -15,7 +15,7 @@ import net.visualillusionsent.utils.LocaleHelper;
 /**
  * Manages all commands.
  * Add commands using one of the methods below.
- * 
+ *
  * @author Willem (l4mRh4X0r)
  * @author Chris (damagefilter)
  */
@@ -24,8 +24,10 @@ public class CommandManager {
 
     /**
      * Remove a command from the command list.
-     * 
+     *
      * @param name
+     *         the name of the command
+     *
      * @return <tt>true</tt> if the command was removed, <tt>false</tt> otherwise.
      */
     public boolean unregisterCommand(String name) {
@@ -39,13 +41,15 @@ public class CommandManager {
         for (int i = 0; i < commandchain.length; i++) {
             if (i == 0) {
                 temp = commands.get(commandchain[i]);
-            } else {
+            }
+            else {
                 if (temp == null) {
                     break;
                 }
                 if (temp.hasSubCommand(commandchain[i])) {
                     temp = temp.getSubCommand(commandchain[i]);
-                } else {
+                }
+                else {
                     temp = null;
                     break;
                 }
@@ -53,7 +57,8 @@ public class CommandManager {
         }
         if (temp == null) {
             return false;
-        } else {
+        }
+        else {
             if (!temp.meta.helpLookup().isEmpty() && Canary.help().hasHelp(temp.meta.helpLookup())) {
                 Canary.help().unregisterCommand(temp.owner, temp.meta.helpLookup());
             }
@@ -63,11 +68,12 @@ public class CommandManager {
             if (temp.getParent() != null) {
                 temp.getParent().removeSubCommand(temp);
                 return true;
-            } else {
+            }
+            else {
                 for (int i = 0; i < temp.meta.aliases().length; i++) {
                     commands.remove(temp.meta.aliases()[i].toLowerCase());
                 }
-                return temp != null;
+                return true;
             }
         }
 
@@ -75,9 +81,9 @@ public class CommandManager {
 
     /**
      * Remove all commands that belong to the specified command owner.
-     * 
+     *
      * @param owner
-     *            The owner. That can be a plugin or the server
+     *         The owner. That can be a plugin or the server
      */
     public void unregisterCommands(CommandOwner owner) {
         if (owner == null) {
@@ -98,9 +104,10 @@ public class CommandManager {
 
     /**
      * Checks whether this manager has <tt>command</tt>.
-     * 
+     *
      * @param command
-     *            The command to search for.
+     *         The command to search for.
+     *
      * @return <tt>true</tt> if this manager has <tt>command</tt>, <tt>false</tt> otherwise.
      */
     public boolean hasCommand(String command) {
@@ -109,10 +116,7 @@ public class CommandManager {
 
     public boolean canUseCommand(MessageReceiver user, String command) {
         CanaryCommand cmd = commands.get(command);
-        if (cmd == null) {
-            return false; // For further processing in implementing code
-        }
-        return cmd.canUse(user);
+        return cmd != null && cmd.canUse(user);
     }
 
     /**
@@ -120,14 +124,15 @@ public class CommandManager {
      * found. Returns false if the command wasn't found or if the caller doesn't
      * have the permission to run it. <br>
      * In Short: Use this to fire commands.
-     * 
+     *
      * @param command
-     *            The command to run
+     *         The command to run
      * @param caller
-     *            The {@link MessageReceiver} to send messages back to
-     *            (assumed to be the caller)
+     *         The {@link MessageReceiver} to send messages back to
+     *         (assumed to be the caller)
      * @param args
-     *            The arguments to {@code command} (including {@code command})
+     *         The arguments to {@code command} (including {@code command})
+     *
      * @return true if {@code command} executed successfully, false otherwise
      */
     public boolean parseCommand(MessageReceiver caller, String command, String[] args) {
@@ -180,11 +185,14 @@ public class CommandManager {
     /**
      * Register an already implemented CanaryCommand to the help system.
      * This will automatically update the help system as well.
-     * 
+     *
      * @param com
+     *         the command to register
      * @param owner
+     *         the owner of the command
      * @param force
-     *            force overriding
+     *         force overriding
+     *
      * @throws CommandDependencyException
      */
     public void registerCommand(CanaryCommand com, CommandOwner owner, boolean force) throws CommandDependencyException {
@@ -196,13 +204,15 @@ public class CommandManager {
             for (int i = 0; i < parentchain.length; i++) {
                 if (i == 0) {
                     temp = commands.get(parentchain[i]);
-                } else {
+                }
+                else {
                     if (temp == null) {
                         break;
                     }
                     if (temp.hasSubCommand(parentchain[i])) {
                         temp = temp.getSubCommand(parentchain[i]);
-                    } else {
+                    }
+                    else {
                         temp = null;
                         break;
                     }
@@ -220,15 +230,12 @@ public class CommandManager {
         }
         // KDone. Lets update commands list
         boolean hasDuplicate = false;
-        StringBuilder dupes = null;
+        StringBuilder dupes = new StringBuilder();
         for (String alias : com.meta.aliases()) {
             boolean currentIsDupe = false;
             if (commands.containsKey(alias.toLowerCase()) && com.meta.parent().isEmpty() && !force) {
                 hasDuplicate = true;
                 currentIsDupe = true;
-                if (dupes == null) {
-                    dupes = new StringBuilder();
-                }
                 dupes.append(alias).append(" ");
             }
             if (!currentIsDupe || (currentIsDupe && force)) {
@@ -255,16 +262,21 @@ public class CommandManager {
      * That means if you try to register a command that is a sub-command of something
      * that is not registered yet, it will fail.
      * So make sure you add commands in the correct order.
-     * 
+     *
      * @param listener
+     *         the {@link CommandListener}
      * @param owner
+     *         the {@link CommandOwner}
      * @param translator
+     *         the {@link LocaleHelper} instance used in Translations
      * @param force
+     *         {@code true} to override existing commands; {@code false} for not
+     *
      * @throws CommandDependencyException
      */
     public void registerCommands(final CommandListener listener, CommandOwner owner, LocaleHelper translator, boolean force) throws CommandDependencyException {
         Method[] methods = listener.getClass().getDeclaredMethods();
-        ArrayList<CanaryCommand> loadedCommands = new ArrayList<CanaryCommand>();
+        ArrayList<CanaryCommand> newCommands = new ArrayList<CanaryCommand>();
 
         for (final Method method : methods) {
             if (!method.isAnnotationPresent(Command.class)) {
@@ -285,29 +297,26 @@ public class CommandManager {
                 protected void execute(MessageReceiver caller, String[] parameters) {
                     try {
                         method.invoke(listener, new Object[]{ caller, parameters });
-                    } catch (IllegalArgumentException e) {
-                        Canary.logStacktrace("Could not execute command: " + e.getMessage(), e);
-                    } catch (IllegalAccessException e) {
-                        Canary.logStacktrace("Could not execute command: " + e.getMessage(), e);
-                    } catch (InvocationTargetException e) {
-                        Canary.logStacktrace("Could not execute command: " + e.getMessage(), e);
+                    }
+                    catch (Exception ex) {
+                        Canary.logStacktrace("Could not execute command...", ex.getCause());
                     }
                 }
             };
-            loadedCommands.add(command);
+            newCommands.add(command);
         }
         // Sort load order so dependencies can be resolved properly
-        Collections.sort(loadedCommands);
+        Collections.sort(newCommands);
 
         // Take care of parenting
-        for (CanaryCommand cmd : loadedCommands) {
+        for (CanaryCommand cmd : newCommands) {
             if (cmd.meta.parent().isEmpty()) {
                 continue;
             }
             String[] cmdp = cmd.meta.parent().split("\\.");
             boolean depMissing = true;
             // Check for local dependencies
-            for (CanaryCommand parent : loadedCommands) {
+            for (CanaryCommand parent : newCommands) {
                 CanaryCommand tmp = null;
                 for (int i = 0; i < cmdp.length; i++) {
                     if (i == 0) {
@@ -318,6 +327,7 @@ public class CommandManager {
                         }
                     }
                     else {
+                        //First element wasn't found. Get out.
                         if (tmp == null) {
                             break;
                         }
@@ -337,18 +347,20 @@ public class CommandManager {
             }
 
             // Check for remote dependencies
-            if (!depMissing) { // checking if it had found a local first
+            if (depMissing) { // checking if it had found a local first
                 CanaryCommand temp = null;
                 for (int i = 0; i < cmdp.length; i++) {
                     if (i == 0) {
-                        temp = commands.get(cmdp);
-                    } else {
+                        temp = commands.get(cmdp[0]);
+                    }
+                    else {
                         if (temp == null) {
                             break;
                         }
                         if (temp.hasSubCommand(cmdp[i])) {
                             temp = temp.getSubCommand(cmdp[i]);
-                        } else {
+                        }
+                        else {
                             temp = null;
                             break;
                         }
@@ -369,16 +381,13 @@ public class CommandManager {
         }
         // KDone. Lets update commands list
         boolean hasDuplicate = false;
-        StringBuilder dupes = null;
-        for (CanaryCommand cmd : loadedCommands) {
+        StringBuilder dupes = new StringBuilder();
+        for (CanaryCommand cmd : newCommands) {
             for (String alias : cmd.meta.aliases()) {
                 boolean currentIsDupe = false;
                 if (commands.containsKey(alias.toLowerCase()) && cmd.meta.parent().isEmpty() && !force) {
                     hasDuplicate = true;
                     currentIsDupe = true;
-                    if (dupes == null) {
-                        dupes = new StringBuilder();
-                    }
                     dupes.append(alias).append(" ");
                 }
                 if (!currentIsDupe || (currentIsDupe && force)) {
@@ -401,9 +410,12 @@ public class CommandManager {
 
     /**
      * Build a list of commands matching the given string.
-     * 
+     *
      * @param caller
+     *         the {@link MessageReceiver}
      * @param command
+     *         the command name
+     *
      * @return nullchar separated stringbuilder
      */
     public StringBuilder matchCommand(MessageReceiver caller, String command, boolean onlySubcommands) {
@@ -423,7 +435,7 @@ public class CommandManager {
                         }
                     }
                 }
-                else if (key.toLowerCase().indexOf(command) != -1) {
+                else if (key.toLowerCase().startsWith(command)) {
                     // Partial match
                     if (matching.indexOf("/".concat(key)) == -1) {
                         if (commands.get(key).canUse(caller) && matches <= maxMatches) {
@@ -445,7 +457,7 @@ public class CommandManager {
                             }
                         }
                     }
-                    else if (alias.toLowerCase().indexOf(command) != -1) {
+                    else if (alias.toLowerCase().startsWith(command)) {
                         // partial match
                         if (matching.indexOf(alias) == -1) {
                             if (cmd.canUse(caller) && matches <= maxMatches) {

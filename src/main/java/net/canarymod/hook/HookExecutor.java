@@ -1,12 +1,12 @@
 package net.canarymod.hook;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+
 import net.canarymod.Canary;
 import net.canarymod.ToolBox;
 import net.canarymod.plugin.Plugin;
@@ -15,8 +15,8 @@ import net.canarymod.plugin.RegisteredPluginListener;
 
 /**
  * Stores registered listeners and performs hook dispatches.
- * 
- * @author Chris Ksoll
+ *
+ * @author Chris (damagefilter)
  * @author Jos Kuijpers
  * @author Yariv Livay
  */
@@ -24,9 +24,7 @@ public class HookExecutor implements HookExecutorInterface {
     private final PluginComparator listener_comp = new PluginComparator();
     HashMap<Class<? extends Hook>, ArrayList<RegisteredPluginListener>> listeners = new HashMap<Class<? extends Hook>, ArrayList<RegisteredPluginListener>>();
 
-    /**
-     * Register a {@link PluginListener} for a system hook
-     */
+    /** Register a {@link PluginListener} for a system hook */
     @Override
     public void registerListener(PluginListener listener, Plugin plugin) {
         Method[] methods = ToolBox.safeArrayMerge(listener.getClass().getMethods(), listener.getClass().getDeclaredMethods(), new Method[1]);
@@ -58,14 +56,9 @@ public class HookExecutor implements HookExecutorInterface {
                 public void execute(PluginListener listener, Hook hook) {
                     try {
                         method.invoke(listener, hook);
-                    } catch (IllegalArgumentException ex) {
-                        throw new HookExecutionException(ex.getMessage(), ex.getCause());
-                    } catch (IllegalAccessException ex) {
-                        throw new HookExecutionException(ex.getMessage(), ex.getCause());
-                    } catch (InvocationTargetException ex) {
-                        throw new HookExecutionException(ex.getMessage(), ex.getCause());
-                    } catch (Exception ex) {
-                        throw new HookExecutionException(ex.getMessage(), ex.getCause());
+                    }
+                    catch (Exception ex) {
+                        throw new HookExecutionException(ex.getCause().getMessage(), ex.getCause());
                     }
                 }
             };
@@ -78,9 +71,9 @@ public class HookExecutor implements HookExecutorInterface {
 
     /**
      * Unregisters all listeners for specified plugin
-     * 
+     *
      * @param plugin
-     *            the {@link Plugin} instance
+     *         the {@link Plugin} instance
      */
     @Override
     public void unregisterPluginListeners(Plugin plugin) {
@@ -100,9 +93,7 @@ public class HookExecutor implements HookExecutorInterface {
         }
     }
 
-    /**
-     * Call a system hook
-     */
+    /** Call a system hook */
     @Override
     public void callHook(Hook hook) {
         if (hook.executed()) {
@@ -114,9 +105,10 @@ public class HookExecutor implements HookExecutorInterface {
             for (RegisteredPluginListener l : listeners) {
                 try {
                     l.execute(hook);
-                } catch (HookExecutionException hexex) {
+                }
+                catch (HookExecutionException hexex) {
                     Canary.logStacktrace("Exception while executing Hook: " + hook.getName() + " in PluginListener: " +
-                            l.getListener().getClass().getSimpleName() + " (Plugin: " + l.getPlugin().getName() + ")", hexex);
+                            l.getListener().getClass().getSimpleName() + " (Plugin: " + l.getPlugin().getName() + ")", hexex.getCause());
                 }
             }
         }

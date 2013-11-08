@@ -2,22 +2,25 @@ package net.canarymod.commandsys.commands;
 
 import net.canarymod.Canary;
 import net.canarymod.Translator;
-import net.canarymod.api.Server;
 import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.api.inventory.Item;
 import net.canarymod.chat.Colors;
 import net.canarymod.chat.MessageReceiver;
-import net.canarymod.commandsys.CommandException;
+import net.canarymod.commandsys.NativeCommand;
 
-public class Give {
+/**
+ * Command to give a player (yourself or another) items
+ *
+ * @author Chris (damagefilter)
+ */
+public class Give implements NativeCommand {
 
     public void execute(MessageReceiver caller, String[] parameters) {
-        if (caller instanceof Server) {
-            console(caller, parameters);
-        } else if (caller instanceof Player) {
+        if (caller instanceof Player) {
             player((Player) caller, parameters);
-        } else {
-            throw new CommandException("Unknown MessageReceiver: " + caller.getClass().getSimpleName());
+        }
+        else {
+            console(caller, parameters);
         }
     }
 
@@ -26,7 +29,10 @@ public class Give {
             Canary.help().getHelp(caller, "give");
             return;
         }
-
+        if (!caller.hasPermission("canary.command.give.other")) {
+            caller.notice(Translator.translate("give failed"));
+            return;
+        }
         int amount = 1;
         if (args[args.length - 2].matches("\\d+")) {
             amount = Integer.parseInt(args[args.length - 2]);
@@ -81,6 +87,10 @@ public class Give {
                     return;
                 }
                 Item item = makeItem(args[1], 1);
+                if (item == null) { // NULL CHECK!
+                    player.notice(Translator.translateAndFormat("give invalid itemtype", args[1]));
+                    return;
+                }
                 target.giveItem(item);
                 target.message(Colors.YELLOW + Translator.translateAndFormat("give received", item.getType().getDisplayName()));
                 player.notice(Translator.translateAndFormat("give success other", target.getName()));
@@ -114,10 +124,13 @@ public class Give {
 
     /**
      * Make item from command string and amount
-     * 
+     *
      * @param input
+     *         the input command string
      * @param amount
-     * @return
+     *         the amount to create
+     *
+     * @return the new {@link Item}
      */
     private Item makeItem(String input, int amount) {
         Item i = Canary.factory().getItemFactory().newItem(input);

@@ -5,9 +5,15 @@ import net.canarymod.Translator;
 import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.chat.Colors;
 import net.canarymod.chat.MessageReceiver;
+import net.canarymod.commandsys.NativeCommand;
 import net.canarymod.user.Group;
 
-public class GroupRemove {
+/**
+ * Command to remove a group   
+ *
+ * @author Chris (damagefilter)
+ */
+public class GroupRemove implements NativeCommand {
 
     // group remove <name>
     public void execute(MessageReceiver caller, String[] args) {
@@ -32,6 +38,5 @@ public class GroupRemove {
         }
         Canary.usersAndGroups().removeGroup(group);
         caller.message(Colors.YELLOW + Translator.translateAndFormat("group removed", group.getName()));
-        group = null;
     }
 }

@@ -2,23 +2,27 @@ package net.canarymod.commandsys.commands;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
 import net.canarymod.Canary;
 import net.canarymod.Translator;
-import net.canarymod.api.Server;
 import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.chat.MessageReceiver;
 import net.canarymod.chat.TextFormat;
-import net.canarymod.commandsys.CommandException;
+import net.canarymod.commandsys.NativeCommand;
 
-public class HelpCommand {
+/**
+ * Command to access help about all commands
+ *
+ * @author Chris (damagefilter)
+ */
+public class HelpCommand implements NativeCommand {
 
     public void execute(MessageReceiver caller, String[] parameters) {
-        if (caller instanceof Server) {
-            console(caller, parameters);
-        } else if (caller instanceof Player) {
+        if (caller instanceof Player) {
             player((Player) caller, parameters);
-        } else {
-            throw new CommandException(Translator.translateAndFormat("unknown messagereceiver", caller.getClass().getSimpleName()));
+        }
+        else {
+            console(caller, parameters);
         }
     }
 
@@ -58,6 +62,7 @@ public class HelpCommand {
 
         if (lines == null) {
             Canary.logInfo(Translator.translate("help not found"));
+            return;
         }
         // Send all lines
         for (String l : lines) {

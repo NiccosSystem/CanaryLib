@@ -5,6 +5,8 @@ import net.canarymod.plugin.Plugin;
 
 /**
  * Called when a plugin is enabled.
+ *
+ * @author greatman
  */
 public class PluginEnableHook extends Hook {
 
@@ -16,7 +18,7 @@ public class PluginEnableHook extends Hook {
 
     /**
      * Retrieve the plugin that is enabled
-     * 
+     *
      * @return The plugin that is enabled
      */
     public Plugin getPlugin() {

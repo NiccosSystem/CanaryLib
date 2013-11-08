@@ -7,8 +7,8 @@ import net.canarymod.hook.CancelableHook;
 
 /**
  * Vehicle Damage hook. Contains information about a vehicle receiving damage.
- * 
- * @author Chris Ksoll
+ *
+ * @author Chris (damagefilter)
  */
 public final class VehicleDamageHook extends CancelableHook {
 
@@ -26,7 +26,7 @@ public final class VehicleDamageHook extends CancelableHook {
 
     /**
      * Get the vehicle that is about to be damaged
-     * 
+     *
      * @return attacker if there is one, null otherwise
      */
     public Vehicle getVehicle() {
@@ -35,7 +35,7 @@ public final class VehicleDamageHook extends CancelableHook {
 
     /**
      * Get the entity that is inflicting the damage to the vehicle
-     * 
+     *
      * @return defender
      */
     public Entity getAttacker() {
@@ -44,7 +44,7 @@ public final class VehicleDamageHook extends CancelableHook {
 
     /**
      * Gets the {@link DamageSource} type
-     * 
+     *
      * @return source
      */
     public DamageSource getDamageSource() {
@@ -53,7 +53,7 @@ public final class VehicleDamageHook extends CancelableHook {
 
     /**
      * Gets the amount of damage dealt
-     * 
+     *
      * @return dealt
      */
     public float getDamageDealt() {
@@ -62,6 +62,6 @@ public final class VehicleDamageHook extends CancelableHook {
 
     @Override
     public final String toString() {
-        return String.format("%s[Vehicle=%s, Attacker=%s, DamageSource=%s, Dealt=%d]", getName(), vehicle, attacker, source, dealt);
+        return String.format("%s[Vehicle=%s, Attacker=%s, DamageSource=%s, Dealt=%.4f]", getName(), vehicle, attacker, source, dealt);
     }
 }

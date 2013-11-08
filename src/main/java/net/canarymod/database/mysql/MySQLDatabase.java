@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,6 +24,8 @@ import net.canarymod.database.exceptions.DatabaseTableInconsistencyException;
 import net.canarymod.database.exceptions.DatabaseWriteException;
 
 /**
+ * Represents access to a MySQL database
+ *
  * @author Somners
  */
 public class MySQLDatabase extends Database {
@@ -32,11 +33,14 @@ public class MySQLDatabase extends Database {
     private static MySQLDatabase instance;
     private static MySQLConnectionPool pool;
     private final String LIST_REGEX = "\u00B6";
+    private final String NULL_STRING = "NULL";
 
     private MySQLDatabase() {
         try {
             pool = new MySQLConnectionPool();
-        } catch (Exception e) {}
+        }
+        catch (Exception e) {
+        }
     }
 
     public static MySQLDatabase getInstance() {
@@ -60,11 +64,11 @@ public class MySQLDatabase extends Database {
             HashMap<Column, Object> columns = data.toDatabaseEntryList();
             Iterator<Column> it = columns.keySet().iterator();
 
-            Column column = null;
+            Column column;
             while (it.hasNext()) {
                 column = it.next();
                 if (!column.autoIncrement()) {
-                    fields.append("`").append(column.columnName()).append("`").append(",");;
+                    fields.append("`").append(column.columnName()).append("`").append(",");
                     values.append("?").append(",");
                 }
             }
@@ -79,8 +83,8 @@ public class MySQLDatabase extends Database {
             int i = 1;
             for (Column c : columns.keySet()) {
                 if (!c.autoIncrement()) {
-                    if (column.isList()) {
-                        ps.setObject(i, this.getString((List<?>) columns.get(column)));
+                    if (c.isList()) {
+                        ps.setObject(i, this.getString((List<?>) columns.get(c)));
                     }
                     ps.setObject(i, this.convert(columns.get(c)));
                     i++;
@@ -90,9 +94,11 @@ public class MySQLDatabase extends Database {
             if (ps.executeUpdate() == 0) {
                 throw new DatabaseWriteException("Error inserting MySQL: no rows updated!");
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace(dtie.getMessage(), dtie);
         }
         finally {
@@ -117,34 +123,40 @@ public class MySQLDatabase extends Database {
                 if (rs.next()) {
                     HashMap<Column, Object> columns = data.toDatabaseEntryList();
                     Iterator<Column> it = columns.keySet().iterator();
-                    Column column = null;
+                    Column column;
                     while (it.hasNext()) {
                         column = it.next();
                         if (column.isList()) {
                             rs.updateObject(column.columnName(), this.getString((List<?>) columns.get(column)));
-                        } else {
+                        }
+                        else {
                             rs.updateObject(column.columnName(), columns.get(column));
                         }
                     }
                     rs.updateRow();
-                } else {
+                }
+                else {
                     throw new DatabaseWriteException("Error updating DataAccess to MySQL, no such entry: " + data.toString());
                 }
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace(dtie.getMessage(), dtie);
-        } catch (DatabaseReadException ex) {
+        }
+        catch (DatabaseReadException ex) {
             Logger.getLogger(MySQLDatabase.class.getName()).log(Level.SEVERE, null, ex);
         }
         finally {
             try {
-                PreparedStatement st = rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
+                PreparedStatement st = rs != null && rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
                 this.closeRS(rs);
                 this.closePS(st);
                 pool.returnConnectionToPool(conn);
-            } catch (SQLException ex) {
+            }
+            catch (SQLException ex) {
                 Canary.logStacktrace(ex.getMessage(), ex);
             }
         }
@@ -163,18 +175,21 @@ public class MySQLDatabase extends Database {
                 }
             }
 
-        } catch (DatabaseReadException dre) {
+        }
+        catch (DatabaseReadException dre) {
             Canary.logStacktrace(dre.getMessage(), dre);
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
         }
         finally {
             try {
-                PreparedStatement st = rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
+                PreparedStatement st = rs != null && rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
                 this.closeRS(rs);
                 this.closePS(st);
                 pool.returnConnectionToPool(conn);
-            } catch (SQLException ex) {
+            }
+            catch (SQLException ex) {
                 Canary.logStacktrace(ex.getMessage(), ex);
             }
         }
@@ -192,34 +207,41 @@ public class MySQLDatabase extends Database {
                     for (Column column : dataset.getTableLayout()) {
                         if (column.isList()) {
                             dataSet.put(column.columnName(), this.getList(column.dataType(), rs.getString(column.columnName())));
-                        } else if (rs.getObject(column.columnName()) instanceof Boolean) {
+                        }
+                        else if (rs.getObject(column.columnName()) instanceof Boolean) {
                             dataSet.put(column.columnName(), rs.getBoolean(column.columnName()));
-                        } else {
+                        }
+                        else {
                             dataSet.put(column.columnName(), rs.getObject(column.columnName()));
                         }
                     }
                 }
             }
-        } catch (DatabaseReadException dre) {
+        }
+        catch (DatabaseReadException dre) {
             Canary.logStacktrace(dre.getMessage(), dre);
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace(dtie.getMessage(), dtie);
         }
         finally {
             try {
-                PreparedStatement st = rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
+                PreparedStatement st = rs != null && rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
                 this.closeRS(rs);
                 this.closePS(st);
                 pool.returnConnectionToPool(conn);
-            } catch (SQLException ex) {
+            }
+            catch (SQLException ex) {
                 Canary.logStacktrace(ex.getMessage(), ex);
             }
         }
         try {
             dataset.load(dataSet);
-        } catch (DatabaseAccessException ex) {
+        }
+        catch (DatabaseAccessException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
         }
     }
@@ -237,9 +259,11 @@ public class MySQLDatabase extends Database {
                     for (Column column : typeTemplate.getTableLayout()) {
                         if (column.isList()) {
                             dataSet.put(column.columnName(), this.getList(column.dataType(), rs.getString(column.columnName())));
-                        } else if (rs.getObject(column.columnName()) instanceof Boolean) {
+                        }
+                        else if (rs.getObject(column.columnName()) instanceof Boolean) {
                             dataSet.put(column.columnName(), rs.getBoolean(column.columnName()));
-                        } else {
+                        }
+                        else {
                             dataSet.put(column.columnName(), rs.getObject(column.columnName()));
                         }
                     }
@@ -247,20 +271,24 @@ public class MySQLDatabase extends Database {
                 }
             }
 
-        } catch (DatabaseReadException dre) {
+        }
+        catch (DatabaseReadException dre) {
             Canary.logStacktrace(dre.getMessage(), dre);
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace(dtie.getMessage(), dtie);
         }
         finally {
             try {
-                PreparedStatement st = rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
+                PreparedStatement st = rs != null && rs.getStatement() instanceof PreparedStatement ? (PreparedStatement) rs.getStatement() : null;
                 this.closeRS(rs);
                 this.closePS(st);
                 pool.returnConnectionToPool(conn);
-            } catch (SQLException ex) {
+            }
+            catch (SQLException ex) {
                 Canary.logStacktrace(ex.getMessage(), ex);
             }
         }
@@ -271,7 +299,8 @@ public class MySQLDatabase extends Database {
                 datasets.add(newData);
             }
 
-        } catch (DatabaseAccessException dae) {
+        }
+        catch (DatabaseAccessException dae) {
             Canary.logStacktrace(dae.getMessage(), dae);
         }
     }
@@ -289,13 +318,14 @@ public class MySQLDatabase extends Database {
             rs = metadata.getTables(null, null, schemaTemplate.getName(), null);
             if (!rs.first()) {
                 this.createTable(schemaTemplate);
-            } else {
+            }
+            else {
 
                 LinkedList<String> toRemove = new LinkedList<String>();
                 HashMap<String, Column> toAdd = new HashMap<String, Column>();
                 Iterator<Column> it = schemaTemplate.getTableLayout().iterator();
 
-                Column column = null;
+                Column column;
                 while (it.hasNext()) {
                     column = it.next();
                     toAdd.put(column.columnName(), column);
@@ -304,7 +334,8 @@ public class MySQLDatabase extends Database {
                 for (String col : this.getColumnNames(schemaTemplate)) {
                     if (!toAdd.containsKey(col)) {
                         toRemove.add(col);
-                    } else {
+                    }
+                    else {
                         toAdd.remove(col);
                     }
                 }
@@ -316,9 +347,11 @@ public class MySQLDatabase extends Database {
                     this.insertColumn(schemaTemplate.getName(), entry.getValue());
                 }
             }
-        } catch (SQLException sqle) {
+        }
+        catch (SQLException sqle) {
             throw new DatabaseWriteException("Error updating MySQL schema: " + sqle.getMessage());
-        } catch (DatabaseTableInconsistencyException dtie) {
+        }
+        catch (DatabaseTableInconsistencyException dtie) {
             Canary.logStacktrace("Error updating MySQL schema." + dtie.getMessage(), dtie);
         }
         finally {
@@ -338,7 +371,7 @@ public class MySQLDatabase extends Database {
             Iterator<Column> it = columns.keySet().iterator();
             String primary = null;
 
-            Column column = null;
+            Column column;
             while (it.hasNext()) {
                 column = it.next();
                 fields.append("`").append(column.columnName()).append("` ");
@@ -358,9 +391,11 @@ public class MySQLDatabase extends Database {
             }
             ps = conn.prepareStatement("CREATE TABLE IF NOT EXISTS `" + data.getName() + "` (" + fields.toString() + ") ");
             ps.execute();
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException("Error creating MySQL table '" + data.getName() + "'. " + ex.getMessage());
-        } catch (DatabaseTableInconsistencyException ex) {
+        }
+        catch (DatabaseTableInconsistencyException ex) {
             Canary.logStacktrace(ex.getMessage() + " Error creating MySQL table '" + data.getName() + "'. ", ex);
         }
         finally {
@@ -378,7 +413,8 @@ public class MySQLDatabase extends Database {
                 ps = conn.prepareStatement("ALTER TABLE `" + tableName + "` ADD `" + column.columnName() + "` " + this.getDataTypeSyntax(column.dataType()));
                 ps.execute();
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException("Error adding MySQL collumn: " + column.columnName());
         }
         finally {
@@ -397,7 +433,8 @@ public class MySQLDatabase extends Database {
                 ps = conn.prepareStatement("ALTER TABLE `" + tableName + "` DROP `" + columnName + "`");
                 ps.execute();
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException("Error deleting MySQL collumn: " + columnName);
         }
         finally {
@@ -416,7 +453,8 @@ public class MySQLDatabase extends Database {
             ps.setObject(1, this.convert(value));
             toRet = ps.execute();
 
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException("Error checking Value for MySQL Primary "
                     + "Key in Table `" + data.getName() + "` for key `" + primaryKey
                     + "` and value '" + String.valueOf(value) + "'.");
@@ -439,7 +477,7 @@ public class MySQLDatabase extends Database {
             HashMap<Column, Object> columns = data.toDatabaseEntryList();
             Iterator<Column> it = columns.keySet().iterator();
 
-            Column column = null;
+            Column column;
             while (it.hasNext()) {
                 column = it.next();
                 if (!column.autoIncrement()) {
@@ -473,10 +511,12 @@ public class MySQLDatabase extends Database {
                 toRet = rs.next();
             }
 
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseWriteException(ex.getMessage() + " Error checking MySQL Entry Key in "
                     + data.toString());
-        } catch (DatabaseTableInconsistencyException ex) {
+        }
+        catch (DatabaseTableInconsistencyException ex) {
             Logger.getLogger(MySQLDatabase.class.getName()).log(Level.SEVERE, null, ex);
         }
         finally {
@@ -489,9 +529,9 @@ public class MySQLDatabase extends Database {
 
     /**
      * Safely Close a ResultSet.
-     * 
+     *
      * @param rs
-     *            ResultSet to close.
+     *         ResultSet to close.
      */
     public void closeRS(ResultSet rs) {
         if (rs != null) {
@@ -499,7 +539,8 @@ public class MySQLDatabase extends Database {
                 if (!rs.isClosed()) {
                     rs.close();
                 }
-            } catch (SQLException sqle) {
+            }
+            catch (SQLException sqle) {
                 Canary.logStacktrace("Error closing ResultSet in MySQL database.", sqle);
             }
         }
@@ -507,9 +548,9 @@ public class MySQLDatabase extends Database {
 
     /**
      * Safely Close a PreparedStatement.
-     * 
+     *
      * @param ps
-     *            PreparedStatement to close.
+     *         PreparedStatement to close.
      */
     public void closePS(PreparedStatement ps) {
         if (ps != null) {
@@ -517,7 +558,8 @@ public class MySQLDatabase extends Database {
                 if (!ps.isClosed()) {
                     ps.close();
                 }
-            } catch (SQLException sqle) {
+            }
+            catch (SQLException sqle) {
                 Canary.logStacktrace("Error closing PreparedStatement in MySQL database.", sqle);
             }
         }
@@ -528,7 +570,7 @@ public class MySQLDatabase extends Database {
     }
 
     public ResultSet getResultSet(Connection conn, String tableName, String[] fieldNames, Object[] fieldValues, boolean limitOne) throws DatabaseReadException {
-        PreparedStatement ps = null;
+        PreparedStatement ps;
         ResultSet toRet = null;
 
         try {
@@ -539,7 +581,8 @@ public class MySQLDatabase extends Database {
                     sb.append("`").append(fieldNames[i]);
                     if (i + 1 < fieldNames.length) {
                         sb.append("`=? AND ");
-                    } else {
+                    }
+                    else {
                         sb.append("`=?");
                     }
                 }
@@ -551,19 +594,23 @@ public class MySQLDatabase extends Database {
                     ps.setObject(i + 1, this.convert(fieldValues[i]));
                 }
                 toRet = ps.executeQuery();
-            } else {
+            }
+            else {
                 if (limitOne) {
                     ps = conn.prepareStatement("SELECT * FROM `" + tableName + "` LIMIT 1");
-                } else {
+                }
+                else {
                     ps = conn.prepareStatement("SELECT * FROM `" + tableName + "`");
                 }
 
                 toRet = ps.executeQuery();
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             throw new DatabaseReadException("Error Querying MySQL ResultSet in "
                     + tableName);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             Logger.getLogger(MySQLDatabase.class.getName()).log(Level.SEVERE, null, ex);
         }
         return toRet;
@@ -577,26 +624,24 @@ public class MySQLDatabase extends Database {
         String columnName;
 
         Connection connection = pool.getConnectionFromPool();
-        try
-        {
+        try {
             statement = connection.createStatement();
             resultSet = statement.executeQuery("SHOW COLUMNS FROM `" + data.getName() + "`");
-            while (resultSet.next())
-            {
+            while (resultSet.next()) {
                 columnName = resultSet.getString("field");
                 columns.add(columnName);
             }
-        } catch (SQLException ex)
-        {
+        }
+        catch (SQLException ex) {
             Canary.logStacktrace(ex.getMessage(), ex);
         }
-        finally
-        {
+        finally {
             this.closeRS(resultSet);
             if (statement != null) {
                 try {
                     statement.close();
-                } catch (SQLException ex) {
+                }
+                catch (SQLException ex) {
                     Logger.getLogger(MySQLDatabase.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
@@ -605,7 +650,7 @@ public class MySQLDatabase extends Database {
         return columns;
     }
 
-    public String getDataTypeSyntax(Column.DataType type) {
+    private String getDataTypeSyntax(Column.DataType type) {
         switch (type) {
             case BYTE:
                 return "INT";
@@ -618,7 +663,7 @@ public class MySQLDatabase extends Database {
             case LONG:
                 return "BIGINT";
             case SHORT:
-                return "TINYINT";
+                return "INT";
             case STRING:
                 return "TEXT";
             case BOOLEAN:
@@ -627,52 +672,11 @@ public class MySQLDatabase extends Database {
         return "";
     }
 
-    public int getJDBCDataType(Column.DataType type) {
-        switch (type) {
-            case BYTE:
-                return Types.INTEGER;
-            case INTEGER:
-                return Types.INTEGER;
-            case FLOAT:
-                return Types.DOUBLE;
-            case DOUBLE:
-                return Types.DOUBLE;
-            case LONG:
-                return Types.BIGINT;
-            case SHORT:
-                return Types.TINYINT;
-            case STRING:
-                return Types.BLOB;
-            case BOOLEAN:
-                return Types.BOOLEAN;
-        }
-        return 0;
-    }
-
-    public int getJDBCDataType(Object o) {
-        if (o instanceof Byte)
-            return Types.INTEGER;
-        else if (o instanceof Integer)
-            return Types.INTEGER;
-        else if (o instanceof Float)
-            return Types.DOUBLE;
-        else if (o instanceof Double)
-            return Types.DOUBLE;
-        else if (o instanceof Long)
-            return Types.BIGINT;
-        else if (o instanceof Short)
-            return Types.TINYINT;
-        else if (o instanceof String)
-            return Types.BLOB;
-        else if (o instanceof Boolean)
-            return Types.BOOLEAN;
-        return 0;
-    }
-
     /**
      * Replaces '*' character with '\\*' if the Object is a String.
-     * 
+     *
      * @param o
+     *
      * @return
      */
     private Object convert(Object o) {
@@ -684,9 +688,10 @@ public class MySQLDatabase extends Database {
 
     /**
      * Gets a Java List representation from the mysql String.
-     * 
+     *
      * @param type
      * @param field
+     *
      * @return
      */
     private List<Comparable<?>> getList(Column.DataType type, String field) {
@@ -697,41 +702,73 @@ public class MySQLDatabase extends Database {
         switch (type) {
             case BYTE:
                 for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Byte.valueOf(s));
                 }
                 break;
             case INTEGER:
                 for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Integer.valueOf(s));
                 }
                 break;
             case FLOAT:
                 for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Float.valueOf(s));
                 }
                 break;
             case DOUBLE:
                 for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Double.valueOf(s));
                 }
                 break;
             case LONG:
                 for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Long.valueOf(s));
                 }
                 break;
             case SHORT:
                 for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Short.valueOf(s));
                 }
                 break;
             case STRING:
                 for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(s);
                 }
                 break;
             case BOOLEAN:
                 for (String s : field.split(this.LIST_REGEX)) {
+                    if (s.equals(NULL_STRING)) {
+                        list.add(null);
+                        continue;
+                    }
                     list.add(Boolean.valueOf(s));
                 }
                 break;
@@ -741,8 +778,9 @@ public class MySQLDatabase extends Database {
 
     /**
      * Get the database entry for a Java List.
-     * 
+     *
      * @param list
+     *
      * @return a string representation of the passed list.
      */
     public String getString(List<?> list) {
@@ -750,12 +788,16 @@ public class MySQLDatabase extends Database {
         Iterator<?> it = list.iterator();
         while (it.hasNext()) {
             Object o = it.next();
-            sb.append(String.valueOf(o));
+            if (o == null) {
+                sb.append(NULL_STRING);
+            }
+            else {
+                sb.append(String.valueOf(o));
+            }
             if (it.hasNext()) {
                 sb.append(this.LIST_REGEX);
             }
         }
         return sb.toString();
     }
-
 }

@@ -7,7 +7,7 @@ import net.canarymod.hook.CancelableHook;
 /**
  * Chunk unload hook
  *
- * @author Chris Ksoll
+ * @author Chris (damagefilter)
  */
 public final class ChunkUnloadHook extends CancelableHook {
 
@@ -30,7 +30,7 @@ public final class ChunkUnloadHook extends CancelableHook {
 
     /**
      * Gets the world this chunk is a part of.
-     * 
+     *
      * @return the world
      */
     public World getWorld() {

@@ -5,17 +5,20 @@ import net.canarymod.api.world.position.Location;
 import net.canarymod.hook.Hook;
 
 /**
- * Player respawn hook. Contains information about a player's respawn location
- * 
- * @author Jason Jones
+ * Player pre-respawn hook.
+ * This hook is called before the new location and repsawn point for a player is determined.
+ * Use it to alter those information.
+ *
+ * @author Jason (darkdiplomat)
+ * @author Chris (damagefilter)
  */
-public final class PlayerRespawnHook extends Hook {
+public final class PlayerRespawningHook extends Hook {
 
     private Player player;
     private Location respawn;
     private boolean bedSpawn;
 
-    public PlayerRespawnHook(Player player, Location respawn, boolean bedSpawn) {
+    public PlayerRespawningHook(Player player, Location respawn, boolean bedSpawn) {
         this.player = player;
         this.respawn = respawn;
         this.bedSpawn = bedSpawn;
@@ -23,8 +26,8 @@ public final class PlayerRespawnHook extends Hook {
 
     /**
      * Gets the {@link Player}
-     * 
-     * @return
+     *
+     * @return {@link Player}
      */
     public Player getPlayer() {
         return player;
@@ -32,8 +35,8 @@ public final class PlayerRespawnHook extends Hook {
 
     /**
      * Gets the respawn {@link Location}
-     * 
-     * @return respawn
+     *
+     * @return respawn location
      */
     public Location getRespawnLocation() {
         return respawn;
@@ -41,8 +44,9 @@ public final class PlayerRespawnHook extends Hook {
 
     /**
      * Sets the respawn {@link Location}
-     * 
+     *
      * @param respawn
+     *         the respawn location
      */
     public void setRespawnLocation(Location respawn) {
         this.respawn = respawn;
@@ -50,8 +54,8 @@ public final class PlayerRespawnHook extends Hook {
 
     /**
      * Returns true if the player is supposed to respawn at his bed
-     * 
-     * @return
+     *
+     * @return {@code true} if bed spawn
      */
     public boolean isBedSpawn() {
         return bedSpawn;

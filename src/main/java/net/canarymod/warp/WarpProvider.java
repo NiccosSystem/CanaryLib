@@ -3,10 +3,16 @@ package net.canarymod.warp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.api.world.position.Location;
 import net.canarymod.backbone.BackboneWarps;
 
+/**
+ * Access to the backbone for the whitelist
+ *
+ * @author Chris (damagefilter)
+ */
 public class WarpProvider {
     private ArrayList<Warp> warps;
     private BackboneWarps backbone;
@@ -18,7 +24,7 @@ public class WarpProvider {
 
     /**
      * Add new warp
-     * 
+     *
      * @param warp
      */
     public void addWarp(Warp warp) {
@@ -33,7 +39,7 @@ public class WarpProvider {
 
     /**
      * Remove a warp
-     * 
+     *
      * @param warp
      */
     public void removeWarp(Warp warp) {
@@ -43,7 +49,7 @@ public class WarpProvider {
 
     /**
      * Set home for player, this updates a player home if there already is one
-     * 
+     *
      * @param player
      */
     public void setHome(Player player, Location location) {
@@ -63,8 +69,9 @@ public class WarpProvider {
 
     /**
      * Returns warp that has the given name or null if not exists
-     * 
+     *
      * @param name
+     *
      * @return
      */
     public Warp getWarp(String name) {
@@ -80,8 +87,9 @@ public class WarpProvider {
 
     /**
      * Returns this players home
-     * 
+     *
      * @param player
+     *
      * @return
      */
     public Warp getHome(Player player) {
@@ -90,14 +98,15 @@ public class WarpProvider {
 
     /**
      * Return home for a player with this name
-     * 
+     *
      * @param player
+     *
      * @return
      */
     public Warp getHome(String player) {
         for (Warp g : warps) {
             if (g.isPlayerHome()) {
-                if (g.getOwner().equals(player) && g.isPlayerHome()) {
+                if (g.getOwner().equals(player)) {
                     return g;
                 }
             }
@@ -107,7 +116,7 @@ public class WarpProvider {
 
     /**
      * Return a non-modifiable list of all available warps
-     * 
+     *
      * @return
      */
     public List<Warp> getAllWarps() {

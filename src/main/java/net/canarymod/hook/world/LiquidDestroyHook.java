@@ -5,8 +5,8 @@ import net.canarymod.hook.CancelableHook;
 
 /**
  * Is called when a liquid is about to destroy something (crops, popping off torches etc)
- * 
- * @author Chris Ksoll
+ *
+ * @author Chris (damagefilter)
  */
 public final class LiquidDestroyHook extends CancelableHook {
 
@@ -19,8 +19,8 @@ public final class LiquidDestroyHook extends CancelableHook {
 
     /**
      * Get the block that would be destroyed by the liquid flow
-     * 
-     * @return
+     *
+     * @return the {@link Block}
      */
     public Block getBlock() {
         return block;
@@ -28,8 +28,8 @@ public final class LiquidDestroyHook extends CancelableHook {
 
     /**
      * Check if the block in question will be destroyed regardless of what it is.
-     * 
-     * @return
+     *
+     * @return {@code true} if force destroy
      */
     public boolean isForceDestroy() {
         return forceDestroy;
@@ -38,8 +38,9 @@ public final class LiquidDestroyHook extends CancelableHook {
     /**
      * Set this to true to force the block to be destroyed.
      * This will not work if the hook is canceled already!
-     * 
+     *
      * @param forceDestroy
+     *         {@code true} for force destroy
      */
     public void setForceDestroy(boolean forceDestroy) {
         this.forceDestroy = forceDestroy;

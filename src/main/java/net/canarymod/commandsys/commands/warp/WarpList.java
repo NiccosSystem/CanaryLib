@@ -1,6 +1,7 @@
 package net.canarymod.commandsys.commands.warp;
 
 import java.util.List;
+
 import net.canarymod.Canary;
 import net.canarymod.Translator;
 import net.canarymod.api.Server;
@@ -8,9 +9,15 @@ import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.api.world.blocks.CommandBlock;
 import net.canarymod.chat.Colors;
 import net.canarymod.chat.MessageReceiver;
+import net.canarymod.commandsys.NativeCommand;
 import net.canarymod.warp.Warp;
 
-public class WarpList {
+/**
+ * Command to list all warps     
+ *
+ * @author Chris (damagefilter)
+ */
+public class WarpList implements NativeCommand {
     public void execute(MessageReceiver caller, String[] parameters) {
         if (caller instanceof Server || caller instanceof CommandBlock) {
             caller.notice("**** WARPS ****");
@@ -24,7 +31,8 @@ public class WarpList {
             if (warpList.length() > 0) {
                 warpList.deleteCharAt(warpList.length() - 1);
                 Canary.logInfo(warpList.toString());
-            } else {
+            }
+            else {
                 Canary.logInfo(Translator.translate("no warps"));
             }
         }
@@ -55,7 +63,8 @@ public class WarpList {
             if (warpList.length() > 0) {
                 warpList.deleteCharAt(warpList.length() - 1);
                 player.message(warpList.toString().trim());
-            } else {
+            }
+            else {
                 player.notice(Translator.translate("no warps"));
             }
         }

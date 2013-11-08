@@ -1,5 +1,10 @@
 package net.canarymod.api.world.blocks;
 
+/**
+ * A BlockFace is a side of a block
+ *
+ * @author Chris (damagefilter)
+ */
 public enum BlockFace {
     BOTTOM((byte) 0), TOP((byte) 1), EAST((byte) 2), WEST((byte) 3), NORTH((byte) 4), SOUTH((byte) 5), UNKNOWN((byte) -1);
 
@@ -11,7 +16,7 @@ public enum BlockFace {
 
     /**
      * Return this faces normal direction (The byte value to this face)
-     * 
+     *
      * @return the face byte value
      */
     public byte getByte() {
@@ -20,9 +25,10 @@ public enum BlockFace {
 
     /**
      * Get a BlockFace from byte
-     * 
+     *
      * @param normal
-     *            the facing byte value
+     *         the facing byte value
+     *
      * @return the {@link BlockFace}
      */
     public static BlockFace fromByte(byte normal) {

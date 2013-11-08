@@ -6,8 +6,8 @@ import net.canarymod.hook.CancelableHook;
 
 /**
  * Item Hook. Contains EntityItem and Player
- * 
- * @author
+ *
+ * @author Chris (damagefilter)
  */
 public final class ItemDropHook extends CancelableHook {
 
@@ -21,8 +21,8 @@ public final class ItemDropHook extends CancelableHook {
 
     /**
      * Gets the {@link Player}
-     * 
-     * @return
+     *
+     * @return the {@link Player}
      */
     public Player getPlayer() {
         return player;
@@ -30,8 +30,8 @@ public final class ItemDropHook extends CancelableHook {
 
     /**
      * Gets the {@link EntityItem}
-     * 
-     * @return
+     *
+     * @return the {@link EntityItem}
      */
     public EntityItem getItem() {
         return item;
